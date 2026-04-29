@@ -1,6 +1,16 @@
 import React from 'react';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { cn } from '../lib/utils';
 
 export const Settings: React.FC = () => {
+  const { url, setUrl, status, connect, error } = useWebSocket();
+  const [tempUrl, setTempUrl] = React.useState(url);
+
+  const handleSave = () => {
+    setUrl(tempUrl);
+    localStorage.setItem('fogWsUrl', tempUrl);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="flex justify-between items-center w-full px-8 py-4 bg-[#f8f9ff] fixed top-0 z-50">
@@ -30,25 +40,46 @@ export const Settings: React.FC = () => {
                 <h2 className="text-xl font-bold tracking-tight">Device Connection</h2>
               </div>
               <div className="space-y-8">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-on-surface/40 px-1">Network IP</label>
-                    <input className="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant py-3 px-1 font-mono text-primary focus:ring-0 focus:border-primary transition-all" type="text" defaultValue="192.168.1.42"/>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-on-surface/40 px-1">Communication Port</label>
-                    <input className="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant py-3 px-1 font-mono text-primary focus:ring-0 focus:border-primary transition-all" type="text" defaultValue="8080"/>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-on-surface/40 px-1">WebSocket URL</label>
+                    <input 
+                      className="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant py-3 px-1 font-mono text-primary focus:ring-0 focus:border-primary transition-all" 
+                      type="text" 
+                      value={tempUrl}
+                      onChange={(e) => setTempUrl(e.target.value)}
+                      placeholder="ws://192.168.1.15:8765"
+                    />
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></div>
-                    <span className="text-sm font-mono text-on-surface/60">Status: <span className="text-tertiary font-bold">Active Node Detected</span></span>
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      status === 'connected' ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                    )}></div>
+                    <span className="text-sm font-mono text-on-surface/60">
+                      Status: <span className={cn("font-bold", status === 'connected' ? "text-emerald-500" : "text-red-500")}>
+                        {status.toUpperCase()}
+                      </span>
+                    </span>
                   </div>
-                  <button className="px-6 py-2 bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary hover:text-white transition-all">
-                    Test Connection
-                  </button>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={handleSave}
+                      className="px-6 py-2 bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-slate-200 transition-all"
+                    >
+                      Save URL
+                    </button>
+                    <button 
+                      onClick={() => connect(tempUrl)}
+                      className="px-6 py-2 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all"
+                    >
+                      Connect
+                    </button>
+                  </div>
                 </div>
+                {error && <p className="text-xs text-red-500 font-medium mt-2">{error}</p>}
               </div>
             </section>
 

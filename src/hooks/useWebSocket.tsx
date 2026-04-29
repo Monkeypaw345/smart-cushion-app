@@ -152,9 +152,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!data || !data.local_ip) throw new Error('No Fog Node found on Cloud');
 
       let targetIp = data.local_ip;
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        targetIp = 'localhost';
-      }
+      // Removed forced localhost redirection which broke connections to Fog Nodes on other devices in the same network.
 
       const localWsUrl = targetIp.startsWith('ws') ? targetIp : `ws://${targetIp}:8765`;
       
