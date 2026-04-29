@@ -286,7 +286,7 @@ export const LiveMonitor: React.FC = () => {
               </div>
               <div className="bg-surface-container-low rounded-xl p-4">
                 <p className="text-2xl font-black text-on-surface">
-                  {lastMessage ? Math.round(((lastMessage.session_duration_sec - lastMessage.poor_posture_duration_sec) / (lastMessage.session_duration_sec || 1)) * 100) : 0}%
+                  {lastMessage?.good_posture_pct ?? 0}%
                 </p>
                 <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Good %</p>
               </div>
@@ -326,34 +326,51 @@ export const LiveMonitor: React.FC = () => {
 
             {/* Session info */}
             {lastMessage?.session_id && (
-              <div className="mt-4 bg-surface-container-low rounded-xl p-4 space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40">Session Info</p>
-                <p className="font-mono text-xs text-on-surface/70">ID: {lastMessage.session_id}</p>
-                <p className="font-mono text-xs text-on-surface/70">
-                  Started: {lastMessage.session_start_time_iso
-                    ? new Date(lastMessage.session_start_time_iso).toLocaleTimeString()
-                    : '—'}
-                </p>
-                <p className="font-mono text-xs text-on-surface/70">Device: {lastMessage.device_id}</p>
+              <div className="mt-8 pt-6 border-t border-on-surface/5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-primary/40 text-lg">info</span>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface/40">Session Details</h4>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-surface-container-low/50 p-3 rounded-2xl flex items-center gap-3 border border-on-surface/[0.03]">
+                    <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary text-sm">fingerprint</span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-on-surface/30 uppercase leading-none mb-1">Session ID</p>
+                      <p className="font-mono text-[10px] font-bold text-on-surface/60">{lastMessage.session_id.split('-').pop()}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-surface-container-low/50 p-3 rounded-2xl flex items-center gap-3 border border-on-surface/[0.03]">
+                    <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary text-sm">schedule</span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-on-surface/30 uppercase leading-none mb-1">Start Time</p>
+                      <p className="text-[11px] font-bold text-on-surface/80">
+                        {lastMessage.session_start_time_iso
+                          ? new Date(lastMessage.session_start_time_iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-surface-container-low/50 p-3 rounded-2xl flex items-center gap-3 border border-on-surface/[0.03] col-span-1 sm:col-span-2">
+                    <div className="h-8 w-8 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary text-sm">devices</span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-on-surface/30 uppercase leading-none mb-1">Active Device</p>
+                      <p className="text-[11px] font-bold text-on-surface/80">Smart Cushion AI Node</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Raw WebSocket payload viewer */}
-          <div className="bg-white p-6 rounded-3xl shadow-[0_20px_40px_rgba(11,28,48,0.05)]">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-sm">data_object</span>
-              </div>
-              <div>
-                <h4 className="font-bold text-sm">Live Payload</h4>
-                <p className="text-xs text-on-surface/40">WebSocket · Interface 02 · 0.5 s</p>
-              </div>
-            </div>
-            <pre className="font-mono text-[10px] bg-on-surface text-white p-4 rounded-xl overflow-auto max-h-52 whitespace-pre-wrap leading-relaxed">
-              {lastMessage ? JSON.stringify(lastMessage, null, 2) : '// Waiting for data from Fog Node…'}
-            </pre>
-          </div>
         </section>
 
         {/* ── Right: Alert log ──────────────────────────────────────────── */}

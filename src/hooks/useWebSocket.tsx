@@ -22,6 +22,7 @@ export interface FogRealtimeUpdate {
   alert_count:            number;
   session_duration_sec:   number;
   poor_posture_duration_sec: number;
+  good_posture_pct:       number;
   posture_distribution:   Record<string, number>;
   sensors_heatmap_pct:    number[]; // 9 values [0–100], order: FL FM FR ML MM MR BL BM BR
 }
