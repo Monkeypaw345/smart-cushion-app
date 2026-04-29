@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useWebSocket, type PostureLabel } from '../hooks/useWebSocket';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export const AIAdvisor: React.FC = () => {
   const { lastMessage, status } = useWebSocket();
@@ -83,7 +83,7 @@ export const AIAdvisor: React.FC = () => {
       const response = await fetch(getApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: json.stringify({ query: userMsg })
+        body: JSON.stringify({ query: userMsg })
       });
 
       if (!response.ok) throw new Error("Failed to reach AI Advisor");
