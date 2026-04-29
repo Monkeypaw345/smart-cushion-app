@@ -170,26 +170,65 @@ export const LiveMonitor: React.FC = () => {
               </div>
             </div>
 
-            {/* FSR Heatmap — 3×3 grid */}
-            <div className="bg-surface-container-low rounded-2xl p-5 mb-5">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-on-surface/40 text-center mb-4">
-                Pressure Map · 9 FSR (%)
+            {/* FSR Heatmap — 3×3 grid (Anatomical View: Back at top, Front at bottom) */}
+            <div className="bg-surface-container-low rounded-[2.5rem] p-6 mb-5 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-on-surface/40 text-center mb-6">
+                Pressure Map · Top-Down View
               </p>
-              <div className="grid grid-cols-3 gap-2 aspect-square max-w-[240px] mx-auto">
-                {HEATMAP_CELLS.map((cell, idx) => {
+              
+              <div className="grid grid-cols-3 gap-3 aspect-square max-w-[220px] mx-auto mb-6">
+                {/* Reorder to show Back row first (top), then Mid, then Front (bottom) */}
+                {[6, 7, 8, 3, 4, 5, 0, 1, 2].map((idx) => {
+                  const cell = HEATMAP_CELLS[idx];
                   const pct = heatmap[idx] ?? 0;
+                  
+                  // Dynamic rounding to make it look like a seat cushion
+                  const isTopRow = idx >= 6 && idx <= 8;
+                  const isBottomRow = idx >= 0 && idx <= 2;
+                  const isLeftCol = idx % 3 === 0;
+                  const isRightCol = idx % 3 === 2;
+                  
+                  let roundedClass = 'rounded-xl';
+                  if (isTopRow && isLeftCol) roundedClass = 'rounded-tl-[2rem] rounded-tr-sm rounded-bl-sm rounded-br-sm';
+                  else if (isTopRow && isRightCol) roundedClass = 'rounded-tr-[2rem] rounded-tl-sm rounded-br-sm rounded-bl-sm';
+                  else if (isTopRow) roundedClass = 'rounded-t-2xl rounded-b-sm';
+                  else if (isBottomRow && isLeftCol) roundedClass = 'rounded-bl-[2rem] rounded-br-sm rounded-tl-sm rounded-tr-sm';
+                  else if (isBottomRow && isRightCol) roundedClass = 'rounded-br-[2rem] rounded-bl-sm rounded-tr-sm rounded-tl-sm';
+                  else if (isBottomRow) roundedClass = 'rounded-b-2xl rounded-t-sm';
+                  else roundedClass = 'rounded-md';
+
                   return (
                     <div
                       key={cell.label}
                       title={`${cell.title}: ${pct.toFixed(1)}%`}
                       style={{ backgroundColor: heatmapColor(pct) }}
-                      className="rounded-xl flex flex-col items-center justify-center border border-primary/10 shadow-sm transition-colors py-2 cursor-default"
+                      className={cn(
+                        "flex flex-col items-center justify-center border border-primary/10 shadow-sm transition-all duration-300 py-3 cursor-default hover:scale-105",
+                        roundedClass
+                      )}
                     >
-                      <span className="text-[9px] font-bold text-on-surface/40">{cell.label}</span>
-                      <span className="font-mono text-sm font-black text-on-surface">{pct.toFixed(0)}</span>
+                      <span className="text-[9px] font-bold text-on-surface/50 mix-blend-color-burn">{cell.label}</span>
+                      <span className="font-mono text-sm font-black text-on-surface mix-blend-color-burn">{pct.toFixed(0)}</span>
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Text-based correction */}
+              <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/60">
+                <p className="text-[11px] font-bold text-on-surface/70 mb-1">Live AI Correction</p>
+                <p className="text-sm font-medium text-on-surface leading-snug">
+                  {posture === 'NUP' && "Perfect alignment. Pressure is evenly distributed."}
+                  {posture === 'LF' && "You're leaning forward. Shift your weight back into the seat."}
+                  {posture === 'LB' && "Leaning too far back. Engage your core to sit upright."}
+                  {posture.includes('LFSR') && "Leaning forward and right. Center your torso."}
+                  {posture.includes('LFSL') && "Leaning forward and left. Center your torso."}
+                  {posture.includes('CRL') && "Right leg crossed. Uncross legs to balance pelvis."}
+                  {posture.includes('CLL') && "Left leg crossed. Keep feet flat on the floor."}
+                  {posture === 'EMPTY' && "Cushion is empty. Waiting for user."}
+                  {posture === 'OBJECT' && "Non-human object detected."}
+                </p>
               </div>
             </div>
 
@@ -228,24 +267,62 @@ export const LiveMonitor: React.FC = () => {
                 {alertStatus}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-surface-container-low rounded-xl p-4">
-                <p className="text-2xl font-black text-on-surface">{lastMessage?.alert_count ?? 0}</p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Total Alerts</p>
-              </div>
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-surface-container-low rounded-xl p-4">
                 <p className="text-2xl font-black text-on-surface">
                   {formatDuration(lastMessage?.session_duration_sec ?? 0)}
                 </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Duration</p>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Total Sitting</p>
+              </div>
+              <div className="bg-surface-container-low rounded-xl p-4">
+                <p className="text-2xl font-black text-red-600">
+                  {formatDuration(lastMessage?.poor_posture_duration_sec ?? 0)}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Poor Posture</p>
+              </div>
+              <div className="bg-surface-container-low rounded-xl p-4">
+                <p className="text-2xl font-black text-amber-600">{lastMessage?.alert_count ?? 0}</p>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Alert Count</p>
               </div>
               <div className="bg-surface-container-low rounded-xl p-4">
                 <p className="text-2xl font-black text-on-surface">
-                  {lastMessage?.temperature.toFixed(1) ?? '--'}
+                  {lastMessage ? Math.round(((lastMessage.session_duration_sec - lastMessage.poor_posture_duration_sec) / (lastMessage.session_duration_sec || 1)) * 100) : 0}%
                 </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Temp °C</p>
+                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Good %</p>
               </div>
             </div>
+
+            {/* Posture Distribution */}
+            {lastMessage?.posture_distribution && Object.keys(lastMessage.posture_distribution).length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface/40">Posture Distribution</p>
+                <div className="space-y-2">
+                  {Object.entries(lastMessage.posture_distribution)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([label, secs]) => {
+                      const pct = Math.round((secs / (lastMessage.session_duration_sec || 1)) * 100);
+                      const meta = POSTURE_META[label as PostureLabel];
+                      return (
+                        <div key={label} className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-bold uppercase">
+                            <span className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">{meta?.icon}</span>
+                              {meta?.label || label}
+                            </span>
+                            <span>{pct}%</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+                            <div 
+                              className={cn("h-full transition-all duration-500", meta?.color.replace('text-', 'bg-') || 'bg-primary')} 
+                              style={{ width: `${pct}%` }} 
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {/* Session info */}
             {lastMessage?.session_id && (

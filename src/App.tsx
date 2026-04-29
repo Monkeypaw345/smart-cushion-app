@@ -7,20 +7,24 @@ import { AIAdvisor } from './pages/AIAdvisor';
 import { SessionHistory } from './pages/SessionHistory';
 import { Settings } from './pages/Settings';
 
+import { WebSocketProvider } from './hooks/useWebSocket';
+
 function App() {
   return (
-    <Router>
-      <MainLayout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/live-monitor" element={<LiveMonitor />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/ai-advisor" element={<AIAdvisor />} />
-          <Route path="/history" element={<SessionHistory />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </MainLayout>
-    </Router>
+    <WebSocketProvider>
+      <Router>
+        <MainLayout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/live-monitor" element={<LiveMonitor />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/ai-advisor" element={<AIAdvisor />} />
+            <Route path="/history" element={<SessionHistory />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </MainLayout>
+      </Router>
+    </WebSocketProvider>
   );
 }
 

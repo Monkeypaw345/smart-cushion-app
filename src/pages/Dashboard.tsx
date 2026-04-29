@@ -1,10 +1,10 @@
 import React from 'react';
 
 const stats = [
-  { label: 'Posture today', value: '78%', sub: 'GOOD', color: 'text-primary' },
-  { label: 'Sitting time', value: '5.2h', sub: 'NORMAL', color: 'text-on-surface' },
-  { label: 'Alerts triggered', value: '12', sub: 'AMBER', color: 'text-secondary' },
-  { label: 'Health score', value: '84', sub: '+4%', color: 'text-tertiary' },
+  { label: 'Total Sitting Time', value: '5.2h', sub: 'DAILY', color: 'text-on-surface' },
+  { label: 'Poor Posture Time', value: '28m', sub: 'DAILY', color: 'text-error' },
+  { label: 'Alert Count', value: '12', sub: 'DAILY', color: 'text-secondary' },
+  { label: 'Avg Good Posture', value: '84%', sub: 'DAILY', color: 'text-primary' },
 ];
 
 export const Dashboard: React.FC = () => {

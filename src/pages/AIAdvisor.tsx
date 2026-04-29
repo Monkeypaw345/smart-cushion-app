@@ -1,6 +1,118 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useWebSocket, type PostureLabel } from '../hooks/useWebSocket';
 
 export const AIAdvisor: React.FC = () => {
+  const { lastMessage, status } = useWebSocket();
+  const [chatLog, setChatLog] = useState<{ id: number; text: React.ReactNode; isUser: boolean; time: string }[]>([
+    {
+      id: 1,
+      isUser: false,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: (
+        <>
+          <p className="mb-4">Hello! I am your PostureAI Advisor. I'm connected to your Smart Cushion and analyzing your ergonomics in real-time.</p>
+          <p>Sit back and work normally. I'll let you know if I detect any prolonged poor posture.</p>
+        </>
+      )
+    }
+  ]);
+
+  const posture = lastMessage?.posture ?? 'EMPTY';
+  const occupancy = lastMessage?.occupancy_state ?? 'empty';
+
+  // Proactive AI logic based on live data
+  useEffect(() => {
+    if (status !== 'connected' || occupancy !== 'occupied') return;
+
+    // A simple timeout to trigger AI advice if a bad posture is sustained
+    // In a real app, this would rely on the backend alert_status or sustained duration
+    if (lastMessage?.alert_status === 'WARNING' && lastMessage?.alert_active) {
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      // Prevent spamming the same message
+      setChatLog(prev => {
+        const lastMsg = prev[prev.length - 1];
+        if (lastMsg && !lastMsg.isUser && lastMsg.time === now) return prev;
+
+        let advice = "";
+        if (posture === 'LF') advice = "I notice you are leaning forward. This often correlates with 'mouse arm fatigue'. I recommend a quick reset: focus on retracting your shoulders.";
+        else if (posture === 'LB') advice = "You're leaning quite far back. Make sure your lower back is supported by the chair.";
+        else if (posture.includes('CRL') || posture.includes('CLL')) advice = "I detect crossed legs. This can misalign your pelvis over time. Try to keep both feet flat on the floor.";
+        else advice = "I'm detecting some postural deviation. Please sit upright.";
+
+        return [...prev, {
+          id: Date.now(),
+          isUser: false,
+          time: now,
+          text: (
+            <>
+              <p className="mb-4">{advice}</p>
+              <div className="bg-secondary/10 p-4 rounded-xl border border-secondary/10 flex items-start gap-3 backdrop-blur-sm">
+                <span className="material-symbols-outlined text-secondary">lightbulb</span>
+                <p className="text-sm italic text-secondary">Clinical Insight: Sustained poor posture increases pressure on your vertebrae.</p>
+              </div>
+            </>
+          )
+        }];
+      });
+    }
+  }, [lastMessage?.alert_count, status, occupancy, posture, lastMessage?.alert_status, lastMessage?.alert_active]);
+
+  const [inputStr, setInputStr] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+
+  // Helper to get the API URL (same as History API)
+  const getApiUrl = () => {
+    // We already set this in .env as VITE_API_BASE_URL
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8766';
+    return `${baseUrl}/advisor/chat`;
+  };
+
+  const handleSend = async () => {
+    if (!inputStr.trim() || isThinking) return;
+    
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsg = inputStr;
+    
+    // Add user message to log
+    setChatLog(prev => [...prev, { id: Date.now(), isUser: true, time: now, text: <p>{userMsg}</p> }]);
+    setInputStr("");
+    setIsThinking(true);
+
+    try {
+      const response = await fetch(getApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: json.stringify({ query: userMsg })
+      });
+
+      if (!response.ok) throw new Error("Failed to reach AI Advisor");
+      const data = await response.json();
+      
+      setChatLog(prev => [...prev, {
+        id: Date.now(),
+        isUser: false,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: (
+          <div>
+            <p className="mb-2 whitespace-pre-wrap">{data.response}</p>
+            <p className="text-[10px] opacity-50 italic">AI advice generated locally using sensor telemetry.</p>
+          </div>
+        )
+      }]);
+    } catch (err) {
+      console.error(err);
+      setChatLog(prev => [...prev, {
+        id: Date.now(),
+        isUser: false,
+        time: now,
+        text: <p className="text-error">Sorry, I'm having trouble thinking right now. Is Ollama running?</p>
+      }]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-12">
       <header className="flex justify-between items-center w-full mb-12">
@@ -48,24 +160,47 @@ export const AIAdvisor: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 space-y-10">
-            <div className="flex gap-4 items-start max-w-[85%]">
-              <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 text-secondary">
-                <span className="material-symbols-outlined text-sm">auto_awesome</span>
-              </div>
-              <div className="space-y-4">
-                <div className="p-6 rounded-[2rem] rounded-tl-none bg-secondary/5 text-on-surface leading-relaxed border border-secondary/10">
-                  <p className="mb-4">Based on today's clinical data, I've noticed a recurring pattern in your workstation ergonomics. Since <span className="font-mono font-bold text-secondary">14:00</span>, there is a consistent <span className="font-mono">7.5°</span> lateral lean to the right.</p>
-                  <p className="mb-4">This specific shift often correlates with "mouse arm fatigue." Your trapezius muscle is likely compensating for the repetitive reaching motion. I recommend a <span className="font-bold">90-second postural reset</span>: focus on retracting your right scapula and aligning your sternum with the center of your monitor.</p>
-                  <div className="bg-secondary/10 p-4 rounded-xl border border-secondary/10 flex items-start gap-3 backdrop-blur-sm">
-                    <span className="material-symbols-outlined text-secondary">lightbulb</span>
-                    <p className="text-sm italic text-secondary">Clinical Insight: Sustained lateral leaning increases pressure on your L4-L5 vertebrae by approximately 18%.</p>
+            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+              {chatLog.map(msg => (
+                <div key={msg.id} className={`flex gap-4 items-start max-w-[85%] ${msg.isUser ? 'ml-auto flex-row-reverse' : ''}`}>
+                  {!msg.isUser && (
+                    <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 text-secondary">
+                      <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                    </div>
+                  )}
+                  {msg.isUser && (
+                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+                       <span className="material-symbols-outlined text-sm">person</span>
+                     </div>
+                  )}
+                  <div className={`space-y-1 ${msg.isUser ? 'items-end flex flex-col' : ''}`}>
+                    <div className={`p-5 rounded-[2rem] text-on-surface leading-relaxed ${
+                      msg.isUser 
+                        ? 'bg-primary text-white rounded-tr-none' 
+                        : 'bg-secondary/5 border border-secondary/10 rounded-tl-none'
+                    }`}>
+                      {msg.text}
+                    </div>
+                    <span className="text-[10px] text-on-surface/40 uppercase tracking-widest px-2">{msg.time}</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-on-surface/40 uppercase tracking-widest ml-2">Just now</span>
-              </div>
+              ))}
+              
+              {isThinking && (
+                <div className="flex gap-4 items-start max-w-[85%] animate-pulse">
+                  <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0 text-secondary">
+                    <span className="material-symbols-outlined text-sm">psychology</span>
+                  </div>
+                  <div className="bg-secondary/5 border border-secondary/10 p-5 rounded-[2rem] rounded-tl-none">
+                    <div className="flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-secondary/40 animate-bounce"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-secondary/40 animate-bounce [animation-delay:0.2s]"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-secondary/40 animate-bounce [animation-delay:0.4s]"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
 
           <div className="p-8 bg-white border-t border-outline-variant/10">
             <div className="flex flex-wrap gap-3 mb-8 justify-center">
@@ -80,17 +215,26 @@ export const AIAdvisor: React.FC = () => {
               ))}
             </div>
             <div className="flex flex-col items-center">
-              <button className="w-full max-w-md bg-secondary text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-secondary/20 hover:scale-[0.98] transition-transform flex items-center justify-center gap-3">
+              <button 
+                onClick={() => handleSend()} 
+                className="w-full max-w-md bg-secondary text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-secondary/20 hover:scale-[0.98] transition-transform flex items-center justify-center gap-3">
                 <span className="material-symbols-outlined">analytics</span>
                 Get my personalized advice
               </button>
               <div className="mt-8 w-full flex items-center gap-4 bg-surface-container-low px-6 py-2 rounded-2xl border-b-2 border-outline-variant/50 focus-within:border-secondary transition-colors">
-                <input className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-3 text-on-surface" placeholder="Ask PostureAI anything about your ergonomics..." type="text"/>
+                <input 
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-3 text-on-surface" 
+                  placeholder="Ask PostureAI anything about your ergonomics..." 
+                  type="text"
+                  value={inputStr}
+                  onChange={e => setInputStr(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSend()}
+                />
                 <div className="flex items-center gap-2">
                   <button className="p-2 text-on-surface/40 hover:text-secondary">
                     <span className="material-symbols-outlined">mic</span>
                   </button>
-                  <button className="p-2 text-on-surface/40 hover:text-secondary">
+                  <button onClick={handleSend} className="p-2 text-on-surface/40 hover:text-secondary">
                     <span className="material-symbols-outlined">send</span>
                   </button>
                 </div>
