@@ -44,6 +44,12 @@ export type SessionRecord = {
 export type SessionsResponse = {
   schema_version: string;
   device_id: string;
+  total_count: number;
+  aggregates?: {
+    total_duration_sec: number;
+    total_poor_duration_sec: number;
+    total_alerts: number;
+  };
   sessions: SessionRecord[];
 };
 
@@ -107,10 +113,12 @@ export async function fetchSessions(
   deviceId: string,
   from: string,
   to: string,
+  limit: number = 100,
+  offset: number = 0
 ): Promise<SessionsResponse> {
-  if (isMockMode()) return mockSessions(deviceId, from, to);
+  if (isMockMode()) return mockSessions(deviceId, from, to); // Mock handles range logic
   return request<SessionsResponse>(
-    `/sessions?device_id=${encodeURIComponent(deviceId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    `/sessions?device_id=${encodeURIComponent(deviceId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}&offset=${offset}`,
   );
 }
 

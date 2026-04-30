@@ -381,20 +381,26 @@ export const LiveMonitor: React.FC = () => {
                 {alertLog.length} events
               </span>
             </div>
-            <div className="space-y-3 max-h-64 md:max-h-96 overflow-y-auto pr-1">
+            <div className="space-y-3 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {alertLog.length === 0 ? (
-                <p className="text-[11px] text-on-surface/40 italic text-center py-4">No events recorded.</p>
+                <div className="flex flex-col items-center justify-center h-full opacity-30 italic">
+                  <span className="material-symbols-outlined text-4xl mb-2">history</span>
+                  <p className="text-[11px]">No events recorded.</p>
+                </div>
               ) : (
                 alertLog.map(alert => (
-                  <div key={alert.id} className="flex gap-2 md:gap-3 items-start">
-                    <div className="h-4 w-4 md:h-5 md:w-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-[9px] md:text-[11px] text-red-600">notification_important</span>
+                  <div key={alert.id} className="flex gap-2 md:gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="h-4 w-4 md:h-6 md:w-6 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <span className="material-symbols-outlined text-[10px] md:text-[14px] text-red-600">notification_important</span>
                     </div>
-                    <div>
-                      <p className="text-xs md:text-sm font-bold text-on-surface truncate max-w-[120px] md:max-w-none">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-[13px] font-bold text-on-surface truncate">
                         {POSTURE_META[alert.posture as PostureLabel]?.label ?? alert.posture}
                       </p>
-                      <p className="text-[9px] md:text-[11px] text-on-surface/40 font-mono">{alert.time}</p>
+                      <p className="text-[9px] md:text-[11px] text-on-surface/40 font-mono flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[10px]">schedule</span>
+                        {alert.time}
+                      </p>
                     </div>
                   </div>
                 ))

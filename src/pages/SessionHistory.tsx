@@ -12,17 +12,24 @@ import {
 import { useApiData } from '../hooks/useApiData';
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  const d = new Date(iso);
+  const datePart = d.toLocaleDateString(undefined, {
     month: 'short',
     day: '2-digit',
-    year: 'numeric',
   });
+  const timePart = d.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return `${datePart}, ${timePart}`;
 }
 
-function formatDuration(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+function formatDuration(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 function goodPct(s: SessionRecord): number {
@@ -63,24 +70,73 @@ function downloadCsv(sessions: SessionRecord[]) {
 }
 
 export const SessionHistory: React.FC = () => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [allSessions, setAllSessions] = React.useState<SessionRecord[]>([]);
+  const [totalRecords, setTotalRecords] = React.useState(0);
+  const [cloudAggregates, setCloudAggregates] = React.useState({
+    total_duration_sec: 0,
+    total_poor_duration_sec: 0,
+    total_alerts: 0
+  });
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  const pageSize = 10;
   const cfg = useMemo(getApiConfig, []);
   const today = useMemo(todayIso, []);
   const from = useMemo(() => isoDaysAgo(29), []);
 
-  const { data, loading, error, refresh } = useApiData<SessionsResponse>(
-    () => fetchSessions(cfg.deviceId, from, today),
-    [cfg.deviceId, from, today],
-  );
+  const fetchPage = async (page: number) => {
+    const needed = page * pageSize + pageSize;
+    if (allSessions.length >= needed && allSessions.length >= totalRecords && totalRecords > 0) return;
 
-  const sessions = data?.sessions ?? [];
-  // Newest first.
-  const sorted = [...sessions].sort((a, b) => b.start_time_iso.localeCompare(a.start_time_iso));
+    setLoading(true);
+    try {
+      const offset = allSessions.length;
+      const resp = await fetchSessions(cfg.deviceId, from, today, 20, offset);
+      setAllSessions(prev => [...prev, ...resp.sessions]);
+      setTotalRecords(resp.total_count);
+      if (resp.aggregates) {
+        setCloudAggregates(resp.aggregates);
+      }
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const totalSec = sessions.reduce((s, x) => s + x.duration_sec, 0);
-  const totalPoorSec = sessions.reduce((s, x) => s + x.poor_posture_duration_sec, 0);
+  React.useEffect(() => {
+    fetchPage(currentPage);
+  }, [currentPage, cfg.deviceId, from, today]);
+
+  const displayedSessions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return allSessions.slice(start, start + pageSize);
+  }, [allSessions, currentPage]);
+
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize) || 1);
+  
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  const handleRefresh = () => {
+    setAllSessions([]);
+    setTotalRecords(0);
+    setCloudAggregates({ total_duration_sec: 0, total_poor_duration_sec: 0, total_alerts: 0 });
+    setCurrentPage(1);
+    fetchPage(1);
+  };
+
+  // AI Insights use Cloud-side totals, not just loaded sessions
+  const totalSec = cloudAggregates.total_duration_sec;
+  const totalPoorSec = cloudAggregates.total_poor_duration_sec;
+  const totalAlerts = cloudAggregates.total_alerts;
   const avgGoodPct =
     totalSec > 0 ? Math.round(((totalSec - totalPoorSec) / totalSec) * 100) : 0;
-  const totalAlerts = sessions.reduce((s, x) => s + x.alert_count, 0);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -95,7 +151,7 @@ export const SessionHistory: React.FC = () => {
           </nav>
           <div className="flex items-center gap-2 md:gap-3">
             <button
-              onClick={refresh}
+              onClick={handleRefresh}
               className="p-2 text-on-surface/70 hover:text-primary transition-colors"
               title="Refresh"
             >
@@ -123,8 +179,8 @@ export const SessionHistory: React.FC = () => {
           </div>
           <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
             <button
-              onClick={() => downloadCsv(sorted)}
-              disabled={!sessions.length}
+              onClick={() => downloadCsv(allSessions)}
+              disabled={!allSessions.length}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-white text-primary border border-outline-variant/20 rounded-xl font-bold hover:bg-surface-bright transition-all shadow-sm text-xs md:text-base disabled:opacity-50 print:hidden"
             >
               <span className="material-symbols-outlined text-sm md:text-base">table_view</span>
@@ -132,7 +188,7 @@ export const SessionHistory: React.FC = () => {
             </button>
             <button
               onClick={() => window.print()}
-              disabled={!sessions.length}
+              disabled={!allSessions.length}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-md text-xs md:text-base disabled:opacity-50 print:hidden"
             >
               <span className="material-symbols-outlined text-sm md:text-base">picture_as_pdf</span>
@@ -145,7 +201,7 @@ export const SessionHistory: React.FC = () => {
           <div className="mb-8 p-4 md:p-6 rounded-2xl bg-error-container text-on-error-container">
             <p className="font-bold mb-1">Cloud unavailable</p>
             <p className="text-xs md:text-sm opacity-80">{error}</p>
-            <button onClick={refresh} className="mt-3 text-xs md:text-sm font-bold underline">Try again</button>
+            <button onClick={handleRefresh} className="mt-3 text-xs md:text-sm font-bold underline">Try again</button>
           </div>
         )}
 
@@ -158,13 +214,12 @@ export const SessionHistory: React.FC = () => {
                     <th className="px-2 md:px-6 py-2 md:py-4">Date</th>
                     <th className="px-2 md:px-6 py-2 md:py-4">Duration</th>
                     <th className="px-2 md:px-6 py-2 md:py-4">Good %</th>
-                    <th className="hidden sm:table-cell px-6 py-4">Poor</th>
+                    <th className="hidden sm:table-cell px-6 py-4">Poor (Time)</th>
                     <th className="hidden lg:table-cell px-6 py-4">Alerts</th>
-                    <th className="px-2 md:px-6 py-2 md:py-4 text-right">Det.</th>
                   </tr>
                 </thead>
                 <tbody className="text-xs md:text-sm">
-                  {loading && !data && (
+                  {loading && allSessions.length === 0 && (
                     <>
                       {[0, 1, 2, 3, 4].map((i) => (
                         <tr key={`skel-${i}`} className="animate-pulse">
@@ -175,14 +230,14 @@ export const SessionHistory: React.FC = () => {
                       ))}
                     </>
                   )}
-                  {!loading && sorted.length === 0 && !error && (
+                  {!loading && displayedSessions.length === 0 && !error && (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center text-on-surface/40">
                         No sessions in the selected range.
                       </td>
                     </tr>
                   )}
-                  {sorted.map((s) => {
+                  {displayedSessions.map((s) => {
                     const score = goodPct(s);
                     const color = scoreColor(score);
                     return (
@@ -191,7 +246,7 @@ export const SessionHistory: React.FC = () => {
                           {formatDate(s.start_time_iso)}
                         </td>
                         <td className="px-2 md:px-6 py-4 md:py-6 bg-white group-hover:bg-transparent font-mono">
-                          {formatDuration(secToMin(s.duration_sec))}
+                          {formatDuration(s.duration_sec)}
                         </td>
                         <td className="px-2 md:px-6 py-4 md:py-6 bg-white group-hover:bg-transparent">
                           <div className="flex items-center gap-2 md:gap-3">
@@ -201,8 +256,8 @@ export const SessionHistory: React.FC = () => {
                             <span className={`font-mono font-bold text-${color}`}>{score}%</span>
                           </div>
                         </td>
-                        <td className="hidden sm:table-cell px-6 py-6 bg-white group-hover:bg-transparent text-on-surface/70 font-mono">
-                          {secToMin(s.poor_posture_duration_sec)}m
+                        <td className="hidden sm:table-cell px-6 py-6 bg-white group-hover:bg-transparent text-on-surface/70 font-mono text-xs">
+                          {formatDuration(s.poor_posture_duration_sec)}
                         </td>
                         <td className="hidden lg:table-cell px-6 py-6 bg-white group-hover:bg-transparent">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -221,6 +276,46 @@ export const SessionHistory: React.FC = () => {
                   })}
                 </tbody>
               </table>
+
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4 px-2">
+                <p className="text-on-surface/40 text-xs font-medium uppercase tracking-widest">
+                  Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, allSessions.length)} of {totalRecords}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-outline-variant/20 text-on-surface hover:bg-surface-bright disabled:opacity-30 transition-all shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-lg">chevron_left</span>
+                  </button>
+                  
+                  {[...Array(totalPages)].slice(0, 10).map((_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all shadow-sm ${
+                          currentPage === pageNum 
+                            ? 'bg-primary text-white shadow-primary/20' 
+                            : 'bg-white border border-outline-variant/20 text-on-surface/60 hover:bg-surface-bright'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || loading}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-outline-variant/20 text-on-surface hover:bg-surface-bright disabled:opacity-30 transition-all shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-lg">chevron_right</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -232,19 +327,19 @@ export const SessionHistory: React.FC = () => {
               <div>
                 <h3 className="text-secondary font-black text-lg md:text-xl mb-1 md:mb-2">Long-term Progression AI Insight</h3>
                 <p className="text-on-surface/70 leading-relaxed text-sm md:text-base">
-                  Across {sessions.length} session{sessions.length === 1 ? '' : 's'} in the last 30 days you averaged{' '}
+                  Across {totalRecords} session{totalRecords === 1 ? '' : 's'} in the last 30 days you averaged{' '}
                   <span className="text-secondary font-bold font-mono">{avgGoodPct}%</span> good posture.
                 </p>
               </div>
             </div>
           </div>
-
+ 
           <div className="col-span-12 lg:col-span-4 bg-surface-container-high rounded-2xl md:rounded-[2rem] p-6 md:p-8 flex flex-col justify-between shadow-sm">
             <div>
               <h4 className="text-on-surface/40 uppercase text-[10px] md:text-xs tracking-widest font-bold mb-4 md:mb-6">Aggregate Biometrics</h4>
               <div className="space-y-4 md:space-y-6">
                 {[
-                  { label: 'Total Sessions', val: sessions.length, color: 'text-on-surface' },
+                  { label: 'Total Sessions', val: totalRecords, color: 'text-on-surface' },
                   { label: 'Avg Good %', val: `${avgGoodPct}%`, color: 'text-tertiary' },
                   { label: 'Total Alerts', val: totalAlerts, color: 'text-error' },
                 ].map((item, i) => (
@@ -259,9 +354,6 @@ export const SessionHistory: React.FC = () => {
         </div>
       </div>
 
-      <button className="fixed bottom-24 right-6 md:bottom-10 md:right-10 w-14 h-14 md:w-16 md:h-16 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30 print:hidden">
-        <span className="material-symbols-outlined text-2xl md:text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>videocam</span>
-      </button>
     </div>
   );
 };
