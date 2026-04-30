@@ -163,14 +163,42 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!response.ok) throw new Error('Failed to fetch from Firebase');
       
       const data = await response.json();
-      if (!data || !data.local_ip) throw new Error('No Fog Node found on Cloud');
+      if (!data) throw new Error('No Fog Node found on Cloud');
 
-      const targetIp = data.local_ip;
-      const localWsUrl = targetIp.startsWith('ws') ? targetIp : `ws://${targetIp}:8765`;
+      const localIp = data.local_ip;
+      const ngrokUrl = data.ngrok_url;
       
-      console.log('[Discovery] Using Firebase/local WS:', localWsUrl);
-      setUrl(localWsUrl);
-      return localWsUrl;
+      const localWsUrl = localIp.startsWith('ws') ? localIp : `ws://${localIp}:8765`;
+      const fallbackWsUrl = ngrokUrl ? (ngrokUrl.startsWith('ws') ? ngrokUrl : ngrokUrl.replace('http', 'ws')) : null;
+
+      console.log('[Discovery] Attempting local connection first:', localWsUrl);
+      
+      // We return localWsUrl, but we'll also provide a way to handle the failure
+      // For a truly seamless experience, let's try to 'ping' the local one
+      const isLocalReachable = await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          console.log('[Discovery] Local connection timed out.');
+          resolve(false);
+        }, 2000); // 2 seconds timeout for local network
+
+        const testWs = new WebSocket(localWsUrl);
+        testWs.onopen = () => {
+          clearTimeout(timer);
+          testWs.close();
+          resolve(true);
+        };
+        testWs.onerror = (err) => {
+          console.error('[Discovery] Local probe failed for:', localWsUrl, err);
+          clearTimeout(timer);
+          resolve(false);
+        };
+      });
+
+      const finalUrl = isLocalReachable ? localWsUrl : (fallbackWsUrl || localWsUrl);
+      console.log('[Discovery] Final choice:', finalUrl);
+      
+      setUrl(finalUrl);
+      return finalUrl;
 
     } catch (err: unknown) {
       setError('Smart Cushion connection failed.');

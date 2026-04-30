@@ -74,7 +74,7 @@ const ALERT_STATUS_COLOR: Record<string, string> = {
 // Component
 // ---------------------------------------------------------------------------
 export const LiveMonitor: React.FC = () => {
-  const { status, lastMessage, latency, error, connect, disconnect, discover } = useWebSocket();
+  const { status, url, lastMessage, latency, error, connect, disconnect, discover } = useWebSocket();
 
   const [alertLog, setAlertLog] = useState<{ posture: string; time: string; id: number }[]>([]);
 
@@ -119,6 +119,16 @@ export const LiveMonitor: React.FC = () => {
              status === 'connecting' ? 'Connecting...' :
              status === 'error'      ? (error ?? 'Error') : 'Monitor — Offline'}
           </span>
+          {url && status === 'connected' && (
+            <span className={cn(
+              "text-[10px] font-bold px-2 py-0.5 rounded-full ml-2",
+              (url.includes('ngrok') || url.includes('amazonaws')) 
+                ? "bg-amber-500/20 text-amber-200" 
+                : "bg-emerald-500/20 text-emerald-200"
+            )}>
+              {(url.includes('ngrok') || url.includes('amazonaws')) ? 'Remote Cloud' : 'Direct (Local)'}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-sm font-mono">
@@ -177,16 +187,16 @@ export const LiveMonitor: React.FC = () => {
               </p>
               
               <div className="grid grid-cols-3 gap-2 md:gap-3 aspect-square max-w-[180px] md:max-w-[220px] mx-auto mb-4 md:mb-6">
-                {/* Reorder to show Back row first (top), then Mid, then Front (bottom) */}
-                {[6, 7, 8, 3, 4, 5, 0, 1, 2].map((idx) => {
+                {/* Anatomical View: Front at top (0,1,2), Back at bottom (6,7,8) */}
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((idx, visualIdx) => {
                   const cell = HEATMAP_CELLS[idx];
                   const pct = heatmap[idx] ?? 0;
                   
-                  // Dynamic rounding to make it look like a seat cushion
-                  const isTopRow = idx >= 6 && idx <= 8;
-                  const isBottomRow = idx >= 0 && idx <= 2;
-                  const isLeftCol = idx % 3 === 0;
-                  const isRightCol = idx % 3 === 2;
+                  // Visual-based rounding (Top row = first 3 in loop, Bottom row = last 3)
+                  const isTopRow = visualIdx <= 2;
+                  const isBottomRow = visualIdx >= 6;
+                  const isLeftCol = visualIdx % 3 === 0;
+                  const isRightCol = visualIdx % 3 === 2;
                   
                   let roundedClass = 'rounded-lg md:rounded-xl';
                   if (isTopRow && isLeftCol) roundedClass = 'rounded-tl-[1.5rem] md:rounded-tl-[2rem]';
@@ -284,7 +294,9 @@ export const LiveMonitor: React.FC = () => {
                   {Object.entries(lastMessage.posture_distribution)
                     .sort(([, a], [, b]) => b - a)
                     .map(([label, secs]) => {
-                      const pct = Math.round((secs / (lastMessage.session_duration_sec || 1)) * 100);
+                      // Total sum of all distribution seconds to ensure exactly 100%
+                      const totalSecs = Object.values(lastMessage.posture_distribution).reduce((a, b) => a + b, 0);
+                      const pct = Math.round((secs / (totalSecs || 1)) * 100);
                       const meta = POSTURE_META[label as PostureLabel];
                       return (
                         <div key={label} className="space-y-1">
