@@ -136,9 +136,22 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const discover = useCallback(async () => {
+    // ── Priority 1: AWS API Gateway WebSocket (cloud relay) ──────────────────
+    const cloudWsUrl = import.meta.env.VITE_CLOUD_WS_URL as string | undefined;
+    if (cloudWsUrl) {
+      const deviceId = import.meta.env.VITE_DEVICE_ID || 'cushion-01';
+      const fullUrl = cloudWsUrl.includes('?')
+        ? cloudWsUrl
+        : `${cloudWsUrl}?type=app&device_id=${deviceId}`;
+      console.log('[Discovery] Using AWS WebSocket relay:', fullUrl);
+      setUrl(fullUrl);
+      return fullUrl;
+    }
+
+    // ── Priority 2: Firebase discovery (local network / Ngrok fallback) ──────
     const firebaseBaseUrl = import.meta.env.VITE_FIREBASE_DISCOVERY_URL;
     if (!firebaseBaseUrl) {
-      setError('Firebase Discovery URL not configured');
+      setError('No WebSocket URL configured. Set VITE_CLOUD_WS_URL or VITE_FIREBASE_DISCOVERY_URL.');
       return null;
     }
 
@@ -152,23 +165,30 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const data = await response.json();
       if (!data || !data.local_ip) throw new Error('No Fog Node found on Cloud');
 
-      let targetIp = data.local_ip;
-      // Removed forced localhost redirection which broke connections to Fog Nodes on other devices in the same network.
-
+      const targetIp = data.local_ip;
       const localWsUrl = targetIp.startsWith('ws') ? targetIp : `ws://${targetIp}:8765`;
       
-      console.log('Discovery: Connecting to:', localWsUrl);
+      console.log('[Discovery] Using Firebase/local WS:', localWsUrl);
       setUrl(localWsUrl);
       return localWsUrl;
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Smart Cushion connection failed.');
       setStatus('error');
       return null;
     }
   }, []);
 
+  // Auto-connect on mount if AWS cloud WS URL is configured
   useEffect(() => {
+    const cloudWsUrl = import.meta.env.VITE_CLOUD_WS_URL as string | undefined;
+    if (cloudWsUrl && !url) {
+      const deviceId = import.meta.env.VITE_DEVICE_ID || 'cushion-01';
+      const fullUrl = cloudWsUrl.includes('?')
+        ? cloudWsUrl
+        : `${cloudWsUrl}?type=app&device_id=${deviceId}`;
+      setUrl(fullUrl);
+    }
     return () => {
       if (ws.current) ws.current.close();
     };
