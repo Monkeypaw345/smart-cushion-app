@@ -4,12 +4,9 @@ import {
   getApiConfig,
   isMockMode,
   isoDaysAgo,
-  secToMin,
   todayIso,
   type SessionRecord,
-  type SessionsResponse,
 } from '../lib/api';
-import { useApiData } from '../hooks/useApiData';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);

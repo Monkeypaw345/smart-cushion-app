@@ -241,7 +241,17 @@ function mockSessions(
       });
     }
   }
-  return { schema_version: '1.0', device_id: deviceId, sessions };
+  return { 
+    schema_version: '1.0', 
+    device_id: deviceId, 
+    total_count: sessions.length,
+    aggregates: {
+      total_duration_sec: sessions.reduce((s, x) => s + x.duration_sec, 0),
+      total_poor_duration_sec: sessions.reduce((s, x) => s + x.poor_posture_duration_sec, 0),
+      total_alerts: sessions.reduce((s, x) => s + x.alert_count, 0),
+    },
+    sessions 
+  };
 }
 
 export function todayIso(): string {
