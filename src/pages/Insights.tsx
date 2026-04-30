@@ -184,42 +184,38 @@ export const Insights: React.FC = () => {
       `}</style>
 
       {/* Sync banner */}
-      <div className="no-print bg-secondary/90 backdrop-blur-xl px-8 py-3 flex items-center justify-between text-white">
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-sm">
+      <div className="no-print bg-secondary/90 backdrop-blur-xl px-4 md:px-8 py-2 md:py-3 flex items-center justify-between text-white">
+        <div className="flex items-center gap-2 md:gap-3">
+          <span className="material-symbols-outlined text-xs md:text-sm">
             {error ? 'cloud_off' : isMockMode() ? 'cloud_queue' : 'cloud_done'}
           </span>
-          <span className="text-xs font-medium tracking-wide">
-            {error
-              ? `Cloud unavailable — ${error}`
-              : isMockMode()
-                ? 'Insight mode — Showing sample data (configure VITE_API_BASE_URL for live cloud).'
-                : `Insight mode — Viewing cloud data for ${cfg.deviceId}.`}
+          <span className="text-[10px] md:text-xs font-medium tracking-wide truncate max-w-[200px] md:max-w-none">
+            {error ? `Error: ${error}` : isMockMode() ? 'Sample Data Mode' : `Live Data: ${cfg.deviceId}`}
           </span>
         </div>
         <button
           onClick={refresh}
-          className="text-[10px] uppercase font-bold tracking-widest opacity-80 hover:opacity-100 transition-opacity"
+          className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest opacity-80 hover:opacity-100 transition-opacity"
         >
-          {loading ? 'Refreshing…' : 'Refresh'}
+          {loading ? 'Ref…' : 'Refresh'}
         </button>
       </div>
 
-      <header className="px-8 py-6 flex justify-between items-center w-full">
+      <header className="px-4 md:px-8 py-4 md:py-6 flex justify-between items-center w-full">
         <div>
-          <h1 className="text-2xl font-black tracking-tighter text-on-surface">PostureAI</h1>
-          <p className="text-sm font-medium tracking-tight text-on-surface/60">Clinical Performance Analysis</p>
+          <h1 className="text-xl md:text-2xl font-black tracking-tighter text-on-surface leading-none">PostureAI</h1>
+          <p className="text-[10px] md:text-sm font-medium tracking-tight text-on-surface/60">Performance Analysis</p>
         </div>
-        <div className="flex items-center gap-6 no-print">
+        <div className="flex items-center gap-4 md:gap-6 no-print">
           <button 
             onClick={downloadReport}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold tracking-wide hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+            className="hidden sm:flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold tracking-wide hover:opacity-90 transition-all shadow-lg shadow-primary/20"
           >
             <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
-            Download Clinical Report
+            Report
           </button>
-          <div className="flex items-center gap-4 border-l border-outline-variant/30 pl-6">
-            <span className="material-symbols-outlined text-on-surface/60 cursor-pointer">notifications</span>
+          <div className="flex items-center gap-3 md:gap-4 border-l border-outline-variant/30 pl-4 md:pl-6">
+            <span className="material-symbols-outlined text-on-surface/60 cursor-pointer text-xl">notifications</span>
             <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-low border border-outline-variant/20">
               <img
                 className="w-full h-full object-cover"
@@ -231,24 +227,24 @@ export const Insights: React.FC = () => {
         </div>
       </header>
 
-      <section className="px-8 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+      <section className="px-4 md:px-8 pb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
           {stats.map((stat, i) => (
             <div
               key={i}
-              className={`bg-white p-6 rounded-2xl border border-outline-variant/5 transition-all hover:bg-surface-bright shadow-sm ${loading ? 'animate-pulse' : ''}`}
+              className={`bg-white p-4 md:p-6 rounded-2xl border border-outline-variant/5 transition-all hover:bg-surface-bright shadow-sm ${loading ? 'animate-pulse' : ''}`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/50">{stat.label}</p>
+              <div className="flex justify-between items-start mb-1 md:mb-2">
+                <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-on-surface/50">{stat.label}</p>
                 {stat.trend && (
-                  <span className={`text-[10px] font-bold ${stat.trend.startsWith('+') ? 'text-tertiary' : 'text-error'}`}>
+                  <span className={`text-[8px] md:text-[10px] font-bold ${stat.trend.startsWith('+') ? 'text-tertiary' : 'text-error'}`}>
                     {stat.trend} <span className="material-symbols-outlined text-[10px] align-middle">{stat.trend.startsWith('+') ? 'trending_up' : 'trending_down'}</span>
                   </span>
                 )}
               </div>
               <div className="flex items-end justify-between">
-                <span className={`text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-full mb-1 ${stat.subBg || 'bg-primary/10'} ${stat.subTextColor || stat.subColor || 'text-primary'}`}>
+                <span className={`text-2xl md:text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
+                <span className={`text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-full mb-0.5 md:mb-1 ${stat.subBg || 'bg-primary/10'} ${stat.subTextColor || stat.subColor || 'text-primary'}`}>
                   {stat.sub}
                 </span>
               </div>
@@ -256,41 +252,40 @@ export const Insights: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
-          <div className="bg-surface-container-low p-8 rounded-3xl">
-            <div className="mb-8">
-              <h3 className="text-xl font-bold tracking-tight text-on-surface">Posture breakdown today</h3>
-              <p className="text-sm text-on-surface/50">Volumetric analysis of spinal alignment</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-8 md:mb-12">
+          <div className="bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-3xl">
+            <div className="mb-6 md:mb-8">
+              <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Posture breakdown</h3>
+              <p className="text-xs md:text-sm text-on-surface/50">Spinal alignment analysis</p>
             </div>
-            <div className="flex flex-col md:flex-row items-center justify-around gap-8">
-              <div className="relative w-48 h-48 rounded-full flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 md:gap-8">
+              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full flex items-center justify-center flex-shrink-0">
                 <div
                   className="absolute inset-0 rounded-full"
                   style={{
                     background: `conic-gradient(#00685f 0% ${goodPctToday}%, #bcc9c6 ${goodPctToday}% 100%)`,
                   }}
                 ></div>
-                <div className="absolute inset-4 rounded-full bg-surface-container-low flex flex-col items-center justify-center">
-                  <span className="text-4xl font-black text-primary font-mono">
+                <div className="absolute inset-3 md:inset-4 rounded-full bg-surface-container-low flex flex-col items-center justify-center">
+                  <span className="text-3xl md:text-4xl font-black text-primary font-mono leading-none">
                     {summary.loading ? '—' : `${goodPctToday}%`}
                   </span>
-                  <span className="text-[10px] uppercase font-black tracking-widest text-on-surface/40">Upright</span>
+                  <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest text-on-surface/40 mt-1">Upright</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 md:gap-4 w-full sm:w-auto">
                 {[
-                  { label: 'Upright', sub: 'Optimal Alignment', color: 'bg-primary', pct: dist.upright_pct },
-                  { label: 'Lean left', sub: 'Lateral Shift', color: 'bg-[#60a5fa]', pct: dist.lean_left_pct },
-                  { label: 'Lean right', sub: 'Lateral Shift', color: 'bg-[#f59e0b]', pct: dist.lean_right_pct },
-                  { label: 'Slouch', sub: 'Kyphosis Risk', color: 'bg-error', pct: dist.slouching_forward_pct },
+                  { label: 'Upright', color: 'bg-primary', pct: dist.upright_pct },
+                  { label: 'Lean L', color: 'bg-[#60a5fa]', pct: dist.lean_left_pct },
+                  { label: 'Lean R', color: 'bg-[#f59e0b]', pct: dist.lean_right_pct },
+                  { label: 'Slouch', color: 'bg-error', pct: dist.slouching_forward_pct },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                    <div>
-                      <p className="text-xs font-bold">
-                        {item.label} {item.pct !== undefined ? <span className="font-mono text-on-surface/60">{item.pct}%</span> : null}
+                  <div key={i} className="flex items-center gap-2 md:gap-3">
+                    <div className={`w-2 h-2 md:w-3 md:h-3 rounded-full flex-shrink-0 ${item.color}`}></div>
+                    <div className="truncate">
+                      <p className="text-[10px] md:text-xs font-bold truncate">
+                        {item.label} <span className="font-mono text-on-surface/60 ml-1">{item.pct}%</span>
                       </p>
-                      <p className="text-[10px] text-on-surface/50 uppercase font-mono">{item.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -298,34 +293,34 @@ export const Insights: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-surface-container-low p-8 rounded-3xl">
-            <div className="mb-8 flex justify-between items-start">
+          <div className="bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-3xl">
+            <div className="mb-6 md:mb-8 flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-bold tracking-tight text-on-surface">Daily posture hours</h3>
-                <p className="text-sm text-on-surface/50">Last 7 days · good vs poor minutes</p>
+                <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Daily posture</h3>
+                <p className="text-xs md:text-sm text-on-surface/50">Last 7 days · min</p>
               </div>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <span className="text-[10px] font-bold text-on-surface/60">GOOD</span>
+              <div className="flex gap-2 md:gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">GOOD</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-error"></div>
-                  <span className="text-[10px] font-bold text-on-surface/60">POOR</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">POOR</span>
                 </div>
               </div>
             </div>
-            <div className="h-64 flex items-end justify-between px-4">
+            <div className="h-48 md:h-64 flex items-end justify-between px-1 md:px-4 gap-1">
               {(buckets.length ? buckets : DAY_LABELS.map((l) => ({ label: l, date: '', goodMin: 0, poorMin: 0 }))).map((b, i) => {
                 const goodH = (b.goodMin / maxBarMin) * 100;
                 const poorH = (b.poorMin / maxBarMin) * 100;
                 return (
-                  <div key={i} className="flex-col items-center gap-2 flex">
-                    <div className="w-10 flex flex-col justify-end h-48 rounded-lg overflow-hidden bg-white/20">
+                  <div key={i} className="flex-col items-center gap-2 flex flex-1">
+                    <div className="w-full max-w-[1.5rem] md:max-w-[2.5rem] flex flex-col justify-end h-32 md:h-48 rounded-md md:rounded-lg overflow-hidden bg-white/20">
                       <div className="bg-error w-full" style={{ height: `${poorH}%` }}></div>
                       <div className="bg-primary w-full" style={{ height: `${goodH}%` }}></div>
                     </div>
-                    <span className="text-[10px] font-bold text-on-surface/40">{b.label}</span>
+                    <span className="text-[8px] md:text-[10px] font-bold text-on-surface/40 uppercase">{b.label.charAt(0)}</span>
                   </div>
                 );
               })}
@@ -333,52 +328,52 @@ export const Insights: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-outline-variant/10 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
+          <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-outline-variant/10 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
               <div>
-                <h3 className="text-xl font-bold tracking-tight text-on-surface">Chronological Performance</h3>
-                <p className="text-sm text-on-surface/50">Fatigue detection by time of day</p>
+                <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Time of Day Performance</h3>
+                <p className="text-xs md:text-sm text-on-surface/50">Fatigue detection trends</p>
               </div>
-              <span className="px-3 py-1 bg-surface-container rounded-lg text-[10px] font-black tracking-widest text-on-surface/40">7D AVERAGE</span>
+              <span className="px-2 py-1 bg-surface-container rounded-lg text-[9px] md:text-[10px] font-black tracking-widest text-on-surface/40">7D AVERAGE</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
               {timeOfDay.map((t, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className={`material-symbols-outlined text-sm ${t.color}`}>{t.icon}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface/60">{t.label}</span>
+                <div key={i} className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-surface-container-low border border-outline-variant/5">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-3 md:mb-4">
+                    <span className={`material-symbols-outlined text-sm md:text-base ${t.color}`}>{t.icon}</span>
+                    <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface/60 truncate">{t.label}</span>
                   </div>
-                  <div className="mb-2">
-                    <span className="text-2xl font-black font-mono text-on-surface">{t.score}%</span>
+                  <div className="mb-1.5 md:mb-2">
+                    <span className="text-xl md:text-2xl font-black font-mono text-on-surface">{t.score}%</span>
                   </div>
                   <div className="w-full h-1 bg-surface-container rounded-full overflow-hidden">
                     <div className={`h-full ${t.score >= 75 ? 'bg-tertiary' : t.score >= 50 ? 'bg-primary' : 'bg-error'}`} style={{ width: `${t.score}%` }}></div>
                   </div>
-                  <p className="mt-2 text-[9px] text-on-surface/40 font-medium uppercase">{t.sub}</p>
+                  <p className="mt-2 text-[8px] text-on-surface/40 font-medium uppercase truncate">{t.sub}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-primary/5 p-8 rounded-3xl border border-primary/10">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="p-3 bg-primary text-white rounded-2xl">
-                <span className="material-symbols-outlined text-2xl">auto_awesome</span>
+          <div className="bg-primary/5 p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-primary/10">
+            <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
+              <div className="p-2 md:p-3 bg-primary text-white rounded-xl md:rounded-2xl flex-shrink-0">
+                <span className="material-symbols-outlined text-xl md:text-2xl">auto_awesome</span>
               </div>
               <div>
-                <h4 className="text-lg font-bold text-primary">AI Advisor</h4>
-                <p className="text-xs text-primary/60">Clinical Recommendation</p>
+                <h4 className="text-base md:text-lg font-bold text-primary leading-tight">AI Advisor</h4>
+                <p className="text-[10px] md:text-xs text-primary/60">Recommendation</p>
               </div>
             </div>
-            <p className="text-sm text-on-surface/70 leading-relaxed mb-6">
+            <p className="text-[13px] md:text-sm text-on-surface/70 leading-relaxed mb-6 italic">
               {worst && pctOfBucket(worst) < 70
-                ? `Critical decline detected on ${weekdayName(worst.date)}s. Your posture drops by 25% in the afternoon. We suggest a 5-min standing stretch at 14:30.`
-                : 'Your performance is stable across the week. Maintain current ergonomics to prevent long-term spinal strain.'}
+                ? `Decline on ${weekdayName(worst.date)}s. Try a stretch at 14:30.`
+                : 'Performance stable. Keep it up!'}
             </p>
             <div className="space-y-3">
-              <button className="w-full py-3 bg-primary text-white rounded-xl text-xs font-bold tracking-wide hover:opacity-90 transition-opacity">View Corrective Drill</button>
-              <button className="w-full py-3 bg-white text-on-surface/50 rounded-xl text-xs font-bold tracking-wide border border-outline-variant/20 hover:bg-surface-bright transition-colors">Set Smart Alert</button>
+              <button className="w-full py-2.5 md:py-3 bg-primary text-white rounded-xl text-[10px] md:text-xs font-bold tracking-wide hover:opacity-90 transition-opacity">Correction Drill</button>
+              <button className="w-full py-2.5 md:py-3 bg-white text-on-surface/50 rounded-xl text-[10px] md:text-xs font-bold tracking-wide border border-outline-variant/20 hover:bg-surface-bright transition-colors">Set Alert</button>
             </div>
           </div>
         </div>

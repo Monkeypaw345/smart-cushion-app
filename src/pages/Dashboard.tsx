@@ -10,21 +10,21 @@ const stats = [
 export const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex justify-between items-center w-full px-8 py-8">
+      <header className="flex flex-wrap justify-between items-center w-full px-4 md:px-8 py-6 md:py-8 gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter text-on-surface">PostureAI</h1>
-          <p className="text-sm font-medium tracking-tight text-on-surface/60">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-on-surface leading-none">PostureAI</h1>
+          <p className="text-[10px] md:text-sm font-medium tracking-tight text-on-surface/40 mt-1">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-8">
-          <nav className="hidden md:flex gap-8 items-center font-medium tracking-tight">
+        <div className="flex items-center gap-4 md:gap-8 ml-auto md:ml-0">
+          <nav className="hidden sm:flex gap-6 md:gap-8 items-center font-medium tracking-tight text-xs md:text-sm">
             <a className="text-on-surface/60 hover:text-primary transition-colors" href="#">Support</a>
-            <a className="text-on-surface/60 hover:text-primary transition-colors" href="#">Documentation</a>
+            <a className="text-on-surface/60 hover:text-primary transition-colors" href="#">Docs</a>
           </nav>
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-on-surface/60 cursor-pointer">notifications</span>
-            <div className="w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/10 overflow-hidden">
+          <div className="flex items-center gap-3 md:gap-4">
+            <span className="material-symbols-outlined text-on-surface/60 cursor-pointer text-xl md:text-2xl">notifications</span>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-surface-container-low border border-outline-variant/10 overflow-hidden">
               <img 
                 src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=2070&auto=format&fit=crop" 
                 alt="Profile" 
@@ -35,78 +35,78 @@ export const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <section className="px-8 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <section className="px-4 md:px-8 pb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
           {stats.map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-outline-variant/5 transition-all hover:bg-surface-bright">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-2">{stat.label}</p>
+            <div key={i} className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-outline-variant/5 transition-all hover:bg-surface-bright">
+              <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-1 md:mb-2">{stat.label}</p>
               <div className="flex items-end justify-between">
-                <span className={`text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
-                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full mb-1">{stat.sub}</span>
+                <span className={`text-2xl md:text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
+                <span className="hidden sm:inline-block text-[8px] md:text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full mb-1">{stat.sub}</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 bg-surface-container-low p-10 rounded-[3rem]">
-            <div className="flex justify-between items-start mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+          <div className="lg:col-span-8 bg-surface-container-low p-6 md:p-10 rounded-[2rem] md:rounded-[3rem]">
+            <div className="flex flex-col sm:flex-row justify-between items-start mb-8 md:mb-12 gap-4">
               <div>
-                <h3 className="text-2xl font-black tracking-tight text-on-surface">Weekly progression</h3>
-                <p className="text-sm text-on-surface/40">Aggregate posture alignment vs previous week</p>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight text-on-surface">Weekly progression</h3>
+                <p className="text-xs md:text-sm text-on-surface/40">Posture alignment vs previous week</p>
               </div>
               <div className="flex gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <span className="text-[10px] font-bold text-on-surface/60">CURRENT</span>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">CURRENT</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-outline-variant"></div>
-                  <span className="text-[10px] font-bold text-on-surface/60">PREVIOUS</span>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">PREVIOUS</span>
                 </div>
               </div>
             </div>
-            <div className="h-64 flex items-end justify-between px-4">
-              {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day, i) => (
-                <div key={day} className="flex flex-col items-center gap-3">
-                  <div className="w-12 flex items-end justify-center gap-1 h-48">
-                    <div className="bg-outline-variant/30 w-3 rounded-t-full" style={{ height: `${40 + i * 5}%` }}></div>
-                    <div className="bg-primary w-4 rounded-t-full shadow-lg shadow-primary/20" style={{ height: `${60 + i * 4}%` }}></div>
+            <div className="h-48 md:h-64 flex items-end justify-between px-1 md:px-4 gap-1">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 md:gap-3 flex-1">
+                  <div className="w-full max-w-[1.5rem] md:max-w-[3rem] flex items-end justify-center gap-0.5 md:gap-1 h-32 md:h-48">
+                    <div className="bg-outline-variant/30 w-1.5 md:w-3 rounded-t-full" style={{ height: `${40 + i * 5}%` }}></div>
+                    <div className="bg-primary w-2 md:w-4 rounded-t-full shadow-lg shadow-primary/20" style={{ height: `${60 + i * 4}%` }}></div>
                   </div>
-                  <span className="text-[10px] font-bold text-on-surface/40">{day}</span>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/40">{day}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="lg:col-span-4 space-y-8">
-            <div className="bg-white border border-outline-variant/15 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+          <div className="lg:col-span-4 space-y-6 md:space-y-8">
+            <div className="bg-white border border-outline-variant/15 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4">
                 <div className="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></div>
               </div>
-              <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-6">Real-time status</p>
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined text-4xl">check_circle</span>
+              <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-4 md:mb-6">Real-time status</p>
+              <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                  <span className="material-symbols-outlined text-3xl md:text-4xl">check_circle</span>
                 </div>
                 <div>
-                  <h4 className="text-xl font-black text-on-surface">Good posture</h4>
-                  <p className="text-sm text-on-surface/40 font-mono tracking-tighter">Confidence: 94.2%</p>
+                  <h4 className="text-lg md:text-xl font-black text-on-surface">Good posture</h4>
+                  <p className="text-[10px] md:text-sm text-on-surface/40 font-mono tracking-tighter">Confidence: 94.2%</p>
                 </div>
               </div>
-              <button className="w-full py-4 bg-surface-container-low text-on-surface font-bold rounded-2xl flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-white transition-all">
-                Open live monitor <span className="material-symbols-outlined">arrow_forward</span>
+              <button className="w-full py-3 md:py-4 bg-surface-container-low text-on-surface text-xs md:text-base font-bold rounded-xl md:rounded-2xl flex items-center justify-center gap-2 group-hover:bg-primary group-hover:text-white transition-all">
+                Open live monitor <span className="material-symbols-outlined text-sm md:text-base">arrow_forward</span>
               </button>
             </div>
 
-            <div className="p-8 bg-secondary/5 rounded-[2.5rem] border border-secondary/10">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-secondary/10 rounded-2xl text-secondary">
-                  <span className="material-symbols-outlined">auto_awesome</span>
+            <div className="p-6 md:p-8 bg-secondary/5 rounded-[2rem] md:rounded-[2.5rem] border border-secondary/10">
+              <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+                <div className="p-2 md:p-3 bg-secondary/10 rounded-xl md:rounded-2xl text-secondary">
+                  <span className="material-symbols-outlined text-base md:text-2xl">auto_awesome</span>
                 </div>
-                <h4 className="font-bold text-on-surface">AI Recommendation</h4>
+                <h4 className="font-bold text-on-surface text-sm md:text-base">AI Recommendation</h4>
               </div>
-              <p className="text-sm text-on-surface/60 leading-relaxed italic">
+              <p className="text-[11px] md:text-sm text-on-surface/60 leading-relaxed italic">
                 "We noticed a slight right-leaning tendency during your last 2 sessions. Try adjusting your monitor 5cm to the left."
               </p>
             </div>

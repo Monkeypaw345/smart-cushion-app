@@ -74,7 +74,7 @@ const ALERT_STATUS_COLOR: Record<string, string> = {
 // Component
 // ---------------------------------------------------------------------------
 export const LiveMonitor: React.FC = () => {
-  const { status, lastMessage, msgCount, latency, error, connect, disconnect, discover } = useWebSocket();
+  const { status, lastMessage, latency, error, connect, disconnect, discover } = useWebSocket();
 
   const [alertLog, setAlertLog] = useState<{ posture: string; time: string; id: number }[]>([]);
 
@@ -106,78 +106,77 @@ export const LiveMonitor: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-surface-container-lowest">
 
       {/* ── Connectivity Banner ─────────────────────────────────────────── */}
-      <div className="bg-primary px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-white shadow-sm">
-        <div className="flex items-center gap-3">
+      <div className="bg-primary px-4 md:px-6 py-2 md:py-3 flex flex-wrap items-center justify-between gap-2 md:gap-3 text-white shadow-sm sticky top-0 z-[60]">
+        <div className="flex items-center gap-2 md:gap-3">
           <span className={cn(
-            'inline-flex h-2.5 w-2.5 rounded-full',
+            'inline-flex h-2 w-2 md:h-2.5 md:w-2.5 rounded-full',
             status === 'connected'  ? 'bg-emerald-400 animate-pulse' :
             status === 'connecting' ? 'bg-amber-400 animate-pulse'   :
             status === 'error'      ? 'bg-red-400'                    : 'bg-white/30'
           )} />
-          <span className="text-sm font-medium text-white/90">
-            {status === 'connected'  ? 'Connected to Smart Cushion' :
-             status === 'connecting' ? 'Connecting to Fog Node...' :
-             status === 'error'      ? (error ?? 'Connection error') : 'Real-time Monitor — Not connected'}
+          <span className="text-[11px] md:text-sm font-medium text-white/90">
+            {status === 'connected'  ? 'Live Connection' :
+             status === 'connecting' ? 'Connecting...' :
+             status === 'error'      ? (error ?? 'Error') : 'Monitor — Offline'}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-sm font-mono">
-          <span className="opacity-70 hidden sm:inline">Latency: {latency} ms</span>
-          <span className="opacity-70 hidden sm:inline">Msgs: {msgCount}</span>
+        <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-sm font-mono">
+          <span className="opacity-70 hidden sm:inline">Lat: {latency}ms</span>
           <button
             id="btn-toggle-connection"
             onClick={status === 'connected' ? disconnect : handleDiscover}
             className={cn(
-              "flex items-center gap-1 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border",
+              "flex items-center gap-1 px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all border",
               status === 'connected' 
                 ? "bg-red-500/20 hover:bg-red-500/40 border-red-500/50 text-red-200" 
                 : "bg-emerald-500/20 hover:bg-emerald-500/40 border-emerald-500/50 text-emerald-200"
             )}
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-xs md:text-sm">
               {status === 'connected' ? 'power_off' : 'rocket_launch'}
             </span>
-            <span>{status === 'connected' ? 'Disconnect' : 'Connect to Cushion'}</span>
+            <span>{status === 'connected' ? 'Stop' : 'Connect'}</span>
           </button>
         </div>
       </div>
 
       {/* ── Main 3-column layout ────────────────────────────────────────── */}
-      <div className="p-6 grid grid-cols-12 gap-6 items-start">
+      <div className="p-4 md:p-6 grid grid-cols-12 gap-4 md:gap-6 items-start">
 
         {/* ── Left: Posture + Heatmap ─────────────────────────────────── */}
         <section className="col-span-12 lg:col-span-4 space-y-6">
           <div className="bg-white p-7 rounded-3xl shadow-[0_20px_40px_rgba(11,28,48,0.05)]">
 
             {/* Posture label */}
-            <div className="flex justify-between items-start mb-5">
+            <div className="flex justify-between items-start mb-4 md:mb-5">
               <div>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface/40 mb-1">Current Posture</p>
-                <h1 className={cn('text-4xl font-black leading-none flex items-center gap-2', meta.color)}>
-                  <span>{meta.label}</span>
-                  <span className="material-symbols-outlined text-3xl">{meta.icon}</span>
+                <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-on-surface/40 mb-1">Current Posture</p>
+                <h1 className={cn('text-2xl md:text-4xl font-black leading-none flex items-center gap-2', meta.color)}>
+                  <span className="truncate max-w-[150px] md:max-w-none">{meta.label}</span>
+                  <span className="material-symbols-outlined text-2xl md:text-3xl flex-shrink-0">{meta.icon}</span>
                 </h1>
-                <p className="text-xs font-mono text-on-surface/40 mt-1">{posture}</p>
+                <p className="text-[10px] md:text-xs font-mono text-on-surface/40 mt-1">{posture}</p>
               </div>
               <div className="text-right space-y-1">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface/40">Session</p>
-                <p className="font-mono text-xl font-bold text-on-surface">
+                <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-on-surface/40">Session</p>
+                <p className="font-mono text-lg md:text-xl font-bold text-on-surface">
                   {formatDuration(lastMessage?.session_duration_sec ?? 0)}
                 </p>
-                <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', occupancyBadge.color)}>
+                <span className={cn('text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full', occupancyBadge.color)}>
                   {occupancyBadge.label}
                 </span>
               </div>
             </div>
 
             {/* FSR Heatmap — 3×3 grid (Anatomical View: Back at top, Front at bottom) */}
-            <div className="bg-surface-container-low rounded-[2.5rem] p-6 mb-5 relative overflow-hidden">
+            <div className="bg-surface-container-low rounded-[2rem] md:rounded-[2.5rem] p-4 md:p-6 mb-4 md:mb-5 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-on-surface/40 text-center mb-6">
+              <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-black text-on-surface/40 text-center mb-4 md:mb-6">
                 Pressure Map · Top-Down View
               </p>
               
-              <div className="grid grid-cols-3 gap-3 aspect-square max-w-[220px] mx-auto mb-6">
+              <div className="grid grid-cols-3 gap-2 md:gap-3 aspect-square max-w-[180px] md:max-w-[220px] mx-auto mb-4 md:mb-6">
                 {/* Reorder to show Back row first (top), then Mid, then Front (bottom) */}
                 {[6, 7, 8, 3, 4, 5, 0, 1, 2].map((idx) => {
                   const cell = HEATMAP_CELLS[idx];
@@ -189,14 +188,11 @@ export const LiveMonitor: React.FC = () => {
                   const isLeftCol = idx % 3 === 0;
                   const isRightCol = idx % 3 === 2;
                   
-                  let roundedClass = 'rounded-xl';
-                  if (isTopRow && isLeftCol) roundedClass = 'rounded-tl-[2rem] rounded-tr-sm rounded-bl-sm rounded-br-sm';
-                  else if (isTopRow && isRightCol) roundedClass = 'rounded-tr-[2rem] rounded-tl-sm rounded-br-sm rounded-bl-sm';
-                  else if (isTopRow) roundedClass = 'rounded-t-2xl rounded-b-sm';
-                  else if (isBottomRow && isLeftCol) roundedClass = 'rounded-bl-[2rem] rounded-br-sm rounded-tl-sm rounded-tr-sm';
-                  else if (isBottomRow && isRightCol) roundedClass = 'rounded-br-[2rem] rounded-bl-sm rounded-tr-sm rounded-tl-sm';
-                  else if (isBottomRow) roundedClass = 'rounded-b-2xl rounded-t-sm';
-                  else roundedClass = 'rounded-md';
+                  let roundedClass = 'rounded-lg md:rounded-xl';
+                  if (isTopRow && isLeftCol) roundedClass = 'rounded-tl-[1.5rem] md:rounded-tl-[2rem]';
+                  else if (isTopRow && isRightCol) roundedClass = 'rounded-tr-[1.5rem] md:rounded-tr-[2rem]';
+                  else if (isBottomRow && isLeftCol) roundedClass = 'rounded-bl-[1.5rem] md:rounded-bl-[2rem]';
+                  else if (isBottomRow && isRightCol) roundedClass = 'rounded-br-[1.5rem] md:rounded-br-[2rem]';
 
                   return (
                     <div
@@ -204,54 +200,53 @@ export const LiveMonitor: React.FC = () => {
                       title={`${cell.title}: ${pct.toFixed(1)}%`}
                       style={{ backgroundColor: heatmapColor(pct) }}
                       className={cn(
-                        "flex flex-col items-center justify-center border border-primary/10 shadow-sm transition-all duration-300 py-3 cursor-default hover:scale-105",
+                        "flex flex-col items-center justify-center border border-primary/10 shadow-sm transition-all duration-300 py-2 md:py-3 cursor-default hover:scale-105",
                         roundedClass
                       )}
                     >
-                      <span className="text-[9px] font-bold text-on-surface/50 mix-blend-color-burn">{cell.label}</span>
-                      <span className="font-mono text-sm font-black text-on-surface mix-blend-color-burn">{pct.toFixed(0)}</span>
+                      <span className="text-[8px] md:text-[9px] font-bold text-on-surface/50 mix-blend-color-burn">{cell.label}</span>
+                      <span className="font-mono text-xs md:text-sm font-black text-on-surface mix-blend-color-burn">{pct.toFixed(0)}</span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Text-based correction */}
-              <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/60">
-                <p className="text-[11px] font-bold text-on-surface/70 mb-1">Live AI Correction</p>
-                <p className="text-sm font-medium text-on-surface leading-snug">
-                  {posture === 'NUP' && "Perfect alignment. Pressure is evenly distributed."}
-                  {posture === 'LF' && "You're leaning forward. Shift your weight back into the seat."}
-                  {posture === 'LB' && "Leaning too far back. Engage your core to sit upright."}
-                  {posture.includes('LFSR') && "Leaning forward and right. Center your torso."}
-                  {posture.includes('LFSL') && "Leaning forward and left. Center your torso."}
-                  {posture.includes('CRL') && "Right leg crossed. Uncross legs to balance pelvis."}
-                  {posture.includes('CLL') && "Left leg crossed. Keep feet flat on the floor."}
-                  {posture === 'EMPTY' && "Cushion is empty. Waiting for user."}
-                  {posture === 'OBJECT' && "Non-human object detected."}
+              <div className="bg-white/50 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-4 text-center border border-white/60">
+                <p className="text-[10px] md:text-[11px] font-bold text-on-surface/70 mb-0.5 md:mb-1">Live Correction</p>
+                <p className="text-[11px] md:text-sm font-medium text-on-surface leading-snug">
+                  {posture === 'NUP' && "Perfect alignment. Pressure is even."}
+                  {posture === 'LF' && "Leaning forward. Shift weight back."}
+                  {posture === 'LB' && "Leaning back. Sit upright."}
+                  {posture.includes('LFSR') && "Leaning fwd-right. Center up."}
+                  {posture.includes('LFSL') && "Leaning fwd-left. Center up."}
+                  {posture.includes('CRL') && "Right leg crossed. Uncross legs."}
+                  {posture.includes('CLL') && "Left leg crossed. Uncross legs."}
+                  {posture === 'EMPTY' && "Cushion is empty."}
+                  {posture === 'OBJECT' && "Object detected."}
                 </p>
               </div>
             </div>
 
             {/* Status row */}
             <div className="flex justify-between gap-2">
-              <div className="flex-1 bg-surface-container-low py-3 rounded-xl flex flex-col items-center">
-                <span className="material-symbols-outlined text-primary mb-1">thermostat</span>
-                <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface/60">Temp</span>
-                <span className="font-mono text-sm font-bold">
+              <div className="flex-1 bg-surface-container-low py-2 md:py-3 rounded-lg md:rounded-xl flex flex-col items-center">
+                <span className="material-symbols-outlined text-primary text-sm md:text-base mb-1">thermostat</span>
+                <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-tighter text-on-surface/60">Temp</span>
+                <span className="font-mono text-xs md:text-sm font-bold">
                   {lastMessage ? lastMessage.temperature.toFixed(1) : '--'}°C
                 </span>
               </div>
-              <div className="flex-1 bg-surface-container-low py-3 rounded-xl flex flex-col items-center">
-                <span className="material-symbols-outlined text-primary mb-1">vibration</span>
-                <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface/60">Motor</span>
-                <span className={cn('font-mono text-sm font-bold', lastMessage?.alert_active ? 'text-red-500' : '')}>
+              <div className="flex-1 bg-surface-container-low py-2 md:py-3 rounded-lg md:rounded-xl flex flex-col items-center">
+                <span className="material-symbols-outlined text-primary text-sm md:text-base mb-1">vibration</span>
+                <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-tighter text-on-surface/60">Motor</span>
+                <span className={cn('font-mono text-xs md:text-sm font-bold', lastMessage?.alert_active ? 'text-red-500' : '')}>
                   {lastMessage?.alert_active ? 'ON' : 'OFF'}
                 </span>
               </div>
-              <div className="flex-1 bg-surface-container-low py-3 rounded-xl flex flex-col items-center">
-                <span className="material-symbols-outlined text-primary mb-1">notifications</span>
-                <span className="text-[10px] font-bold uppercase tracking-tighter text-on-surface/60">Alerts</span>
-                <span className="font-mono text-sm font-bold">{lastMessage?.alert_count ?? 0}</span>
+              <div className="flex-1 bg-surface-container-low py-2 md:py-3 rounded-lg md:rounded-xl flex flex-col items-center">
+                <span className="material-symbols-outlined text-primary text-sm md:text-base mb-1">notifications</span>
+                <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-tighter text-on-surface/60">Alerts</span>
+                <span className="font-mono text-xs md:text-sm font-bold">{lastMessage?.alert_count ?? 0}</span>
               </div>
             </div>
           </div>
@@ -267,29 +262,18 @@ export const LiveMonitor: React.FC = () => {
                 {alertStatus}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-surface-container-low rounded-xl p-4">
-                <p className="text-2xl font-black text-on-surface">
-                  {formatDuration(lastMessage?.session_duration_sec ?? 0)}
-                </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Total Sitting</p>
-              </div>
-              <div className="bg-surface-container-low rounded-xl p-4">
-                <p className="text-2xl font-black text-red-600">
-                  {formatDuration(lastMessage?.poor_posture_duration_sec ?? 0)}
-                </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Poor Posture</p>
-              </div>
-              <div className="bg-surface-container-low rounded-xl p-4">
-                <p className="text-2xl font-black text-amber-600">{lastMessage?.alert_count ?? 0}</p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Alert Count</p>
-              </div>
-              <div className="bg-surface-container-low rounded-xl p-4">
-                <p className="text-2xl font-black text-on-surface">
-                  {lastMessage?.good_posture_pct ?? 0}%
-                </p>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">Good %</p>
-              </div>
+            <div className="grid grid-cols-2 gap-3 md:gap-4 text-center">
+              {[
+                { val: formatDuration(lastMessage?.session_duration_sec ?? 0), label: 'Total', color: 'text-on-surface' },
+                { val: formatDuration(lastMessage?.poor_posture_duration_sec ?? 0), label: 'Poor', color: 'text-red-600' },
+                { val: lastMessage?.alert_count ?? 0, label: 'Alerts', color: 'text-amber-600' },
+                { val: `${lastMessage?.good_posture_pct ?? 0}%`, label: 'Good %', color: 'text-on-surface' },
+              ].map((item, i) => (
+                <div key={i} className="bg-surface-container-low rounded-xl p-3 md:p-4">
+                  <p className={cn("text-lg md:text-2xl font-black", item.color)}>{item.val}</p>
+                  <p className="text-[8px] md:text-[10px] uppercase tracking-widest text-on-surface/40 mt-1">{item.label}</p>
+                </div>
+              ))}
             </div>
 
             {/* Posture Distribution */}
@@ -374,42 +358,31 @@ export const LiveMonitor: React.FC = () => {
         </section>
 
         {/* ── Right: Alert log ──────────────────────────────────────────── */}
-        <section className="col-span-12 lg:col-span-3 space-y-6">
+        <section className="col-span-12 lg:col-span-3 space-y-4 md:space-y-6">
           <div className={cn(
-            'bg-white p-6 rounded-3xl shadow-[0_20px_40px_rgba(11,28,48,0.05)] border-l-4',
+            'bg-white p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-[0_20px_40px_rgba(11,28,48,0.05)] border-l-4',
             alertLog.length > 0 ? 'border-red-400' : 'border-on-surface/10'
           )}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm uppercase tracking-widest font-black">Alert Log</h3>
-              <span className={cn(
-                'text-[10px] font-bold px-2 py-1 rounded-full',
-                alertLog.length > 0 ? 'text-red-600 bg-red-50' : 'text-on-surface/40 bg-surface-container-low'
-              )}>
-                {alertLog.length > 0 ? `${alertLog.length} events` : 'No alerts'}
+              <h3 className="text-[11px] md:text-sm uppercase tracking-widest font-black">Alert Log</h3>
+              <span className="text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-low">
+                {alertLog.length} events
               </span>
             </div>
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-64 md:max-h-96 overflow-y-auto pr-1">
               {alertLog.length === 0 ? (
-                <div className="flex gap-3 items-start opacity-50">
-                  <span className="material-symbols-outlined text-sm mt-0.5">hourglass_empty</span>
-                  <div>
-                    <p className="text-sm font-bold">No alerts yet</p>
-                    <p className="text-xs text-on-surface/40 mt-0.5 leading-relaxed">
-                      Connect to the Fog Node to start monitoring.
-                    </p>
-                  </div>
-                </div>
+                <p className="text-[11px] text-on-surface/40 italic text-center py-4">No events recorded.</p>
               ) : (
                 alertLog.map(alert => (
-                  <div key={alert.id} className="flex gap-3 items-start">
-                    <div className="mt-0.5 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-[11px] text-red-600">notification_important</span>
+                  <div key={alert.id} className="flex gap-2 md:gap-3 items-start">
+                    <div className="h-4 w-4 md:h-5 md:w-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-[9px] md:text-[11px] text-red-600">notification_important</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-on-surface">
+                      <p className="text-xs md:text-sm font-bold text-on-surface truncate max-w-[120px] md:max-w-none">
                         {POSTURE_META[alert.posture as PostureLabel]?.label ?? alert.posture}
                       </p>
-                      <p className="text-[11px] text-on-surface/40 font-mono">{alert.time}</p>
+                      <p className="text-[9px] md:text-[11px] text-on-surface/40 font-mono">{alert.time}</p>
                     </div>
                   </div>
                 ))
@@ -417,18 +390,13 @@ export const LiveMonitor: React.FC = () => {
             </div>
           </div>
 
-          {/* Tips card */}
-          <div className="p-5 rounded-3xl bg-primary/5 border-l-4 border-primary/20">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-outlined text-primary/60 text-lg">psychology</span>
-              <h3 className="text-xs font-black text-primary/60 uppercase tracking-widest">Quick Tip</h3>
+          <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-primary/5 border-l-4 border-primary/20">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-primary/60 text-base">psychology</span>
+              <h3 className="text-[10px] font-black text-primary/60 uppercase tracking-widest">Tip</h3>
             </div>
-            <p className="text-xs text-on-surface/60 leading-relaxed">
-              {lastMessage?.posture === 'NUP'
-                ? '✅ Great posture! Keep your back straight and feet flat on the floor.'
-                : lastMessage?.occupancy_state === 'occupied'
-                  ? '⚠️ Adjust your posture — aim for a natural upright position (NUP).'
-                  : 'Connect the Fog Node and sit on the cushion to start monitoring.'}
+            <p className="text-[11px] text-on-surface/60 leading-relaxed">
+              {lastMessage?.posture === 'NUP' ? '✅ Good job!' : '⚠️ Adjust posture.'}
             </p>
           </div>
         </section>
