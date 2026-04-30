@@ -84,14 +84,30 @@ export const SessionHistory: React.FC = () => {
   const from = useMemo(() => isoDaysAgo(29), []);
 
   const fetchPage = async (page: number) => {
-    const needed = page * pageSize + pageSize;
-    if (allSessions.length >= needed && allSessions.length >= totalRecords && totalRecords > 0) return;
+    const startIdx = (page - 1) * pageSize;
+    
+    // CACHE CHECK: If we already have data for the first item of this page, skip fetch
+    if (allSessions[startIdx] !== undefined) return;
 
     setLoading(true);
     try {
-      const offset = allSessions.length;
-      const resp = await fetchSessions(cfg.deviceId, from, today, 20, offset);
-      setAllSessions(prev => [...prev, ...resp.sessions]);
+      // Fetch exactly 1 page (10 items) starting at the correct offset
+      const resp = await fetchSessions(cfg.deviceId, from, today, pageSize, startIdx);
+      
+      setAllSessions(prev => {
+        const newList = [...prev];
+        // Pad the array if we are jumping to a far page
+        if (newList.length < startIdx + resp.sessions.length) {
+          const filler = new Array(startIdx + resp.sessions.length - newList.length).fill(undefined);
+          newList.push(...filler);
+        }
+        // Fill the specific slots for this page
+        resp.sessions.forEach((s, idx) => {
+          newList[startIdx + idx] = s;
+        });
+        return newList;
+      });
+
       setTotalRecords(resp.total_count);
       if (resp.aggregates) {
         setCloudAggregates(resp.aggregates);
@@ -105,20 +121,8 @@ export const SessionHistory: React.FC = () => {
   };
 
   React.useEffect(() => {
-    // Check if we already have the data for the current page
-    const startIdx = (currentPage - 1) * pageSize;
-    const hasData = allSessions[startIdx] !== undefined;
-
-    if (!hasData) {
-      fetchPage(currentPage);
-    } else {
-      // If we have current page, prefetch next page as well
-      const nextStartIdx = currentPage * pageSize;
-      if (currentPage < totalPages && allSessions[nextStartIdx] === undefined) {
-        fetchPage(currentPage + 1);
-      }
-    }
-  }, [currentPage, totalPages, allSessions.length]);
+    fetchPage(currentPage);
+  }, [currentPage, cfg.deviceId, from, today]);
 
   const displayedSessions = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
