@@ -105,8 +105,20 @@ export const SessionHistory: React.FC = () => {
   };
 
   React.useEffect(() => {
-    fetchPage(currentPage);
-  }, [currentPage, cfg.deviceId, from, today]);
+    // Check if we already have the data for the current page
+    const startIdx = (currentPage - 1) * pageSize;
+    const hasData = allSessions[startIdx] !== undefined;
+
+    if (!hasData) {
+      fetchPage(currentPage);
+    } else {
+      // If we have current page, prefetch next page as well
+      const nextStartIdx = currentPage * pageSize;
+      if (currentPage < totalPages && allSessions[nextStartIdx] === undefined) {
+        fetchPage(currentPage + 1);
+      }
+    }
+  }, [currentPage, totalPages, allSessions.length]);
 
   const displayedSessions = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -216,12 +228,23 @@ export const SessionHistory: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="text-xs md:text-sm">
-                  {loading && allSessions.length === 0 && (
+                  {(loading || displayedSessions.some(s => !s)) && allSessions.length === 0 && (
                     <>
                       {[0, 1, 2, 3, 4].map((i) => (
                         <tr key={`skel-${i}`} className="animate-pulse">
                           <td className="px-2 md:px-6 py-4 md:py-6 bg-white rounded-l-2xl" colSpan={6}>
                             <div className="h-4 bg-surface-container rounded" />
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                  {!loading && displayedSessions.every(s => !s) && allSessions.length > 0 && (
+                    <>
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <tr key={`jump-skel-${i}`} className="animate-pulse">
+                          <td className="px-2 md:px-6 py-4 md:py-6 bg-white rounded-l-2xl" colSpan={6}>
+                            <div className="h-4 bg-surface-container rounded opacity-20" />
                           </td>
                         </tr>
                       ))}
@@ -234,7 +257,7 @@ export const SessionHistory: React.FC = () => {
                       </td>
                     </tr>
                   )}
-                  {displayedSessions.map((s) => {
+                  {displayedSessions.filter(Boolean).map((s) => {
                     const score = goodPct(s);
                     const color = scoreColor(score);
                     return (
