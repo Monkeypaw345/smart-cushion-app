@@ -168,31 +168,29 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const localIp = data.local_ip;
       const ngrokUrl = data.ngrok_url;
       
+      const isHttps = window.location.protocol === 'https:';
       const localWsUrl = localIp.startsWith('ws') ? localIp : `ws://${localIp}:8765`;
-      const fallbackWsUrl = ngrokUrl ? (ngrokUrl.startsWith('ws') ? ngrokUrl : ngrokUrl.replace('http', 'ws')) : null;
-
-      console.log('[Discovery] Attempting local connection first:', localWsUrl);
       
-      // We return localWsUrl, but we'll also provide a way to handle the failure
-      // For a truly seamless experience, let's try to 'ping' the local one
-      const isLocalReachable = await new Promise((resolve) => {
-        const timer = setTimeout(() => {
-          console.log('[Discovery] Local connection timed out.');
-          resolve(false);
-        }, 2000); // 2 seconds timeout for local network
+      let fallbackWsUrl = null;
+      if (ngrokUrl) {
+        fallbackWsUrl = ngrokUrl.replace(/^https?:\/\//, 'wss://');
+        if (!fallbackWsUrl.startsWith('ws')) fallbackWsUrl = `wss://${fallbackWsUrl}`;
+      }
 
-        const testWs = new WebSocket(localWsUrl);
-        testWs.onopen = () => {
-          clearTimeout(timer);
-          testWs.close();
-          resolve(true);
-        };
-        testWs.onerror = (err) => {
-          console.error('[Discovery] Local probe failed for:', localWsUrl, err);
-          clearTimeout(timer);
-          resolve(false);
-        };
-      });
+      console.log('[Discovery] HTTPS Mode:', isHttps);
+      
+      let isLocalReachable = false;
+      if (!isHttps) {
+        console.log('[Discovery] Attempting local connection first:', localWsUrl);
+        isLocalReachable = await new Promise((resolve) => {
+          const timer = setTimeout(() => resolve(false), 1500);
+          try {
+            const testWs = new WebSocket(localWsUrl);
+            testWs.onopen = () => { clearTimeout(timer); testWs.close(); resolve(true); };
+            testWs.onerror = () => { clearTimeout(timer); resolve(false); };
+          } catch (e) { clearTimeout(timer); resolve(false); }
+        });
+      }
 
       const finalUrl = isLocalReachable ? localWsUrl : (fallbackWsUrl || localWsUrl);
       console.log('[Discovery] Final choice:', finalUrl);
