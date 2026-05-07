@@ -1,4 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Spiney, moodFromScore } from '../components/Spiney';
+import { useGamification, levelInfo, evolutionName } from '../lib/gamification';
 
 const stats = [
   { label: 'Total Sitting Time', value: '5.2h', sub: 'DAILY', color: 'text-on-surface' },
@@ -6,6 +9,83 @@ const stats = [
   { label: 'Alert Count', value: '12', sub: 'DAILY', color: 'text-secondary' },
   { label: 'Avg Good Posture', value: '84%', sub: 'DAILY', color: 'text-primary' },
 ];
+
+const SpineyPanel: React.FC = () => {
+  const { state } = useGamification();
+  const mood = moodFromScore(state.todayScore);
+  const li = levelInfo(state.xp);
+  return (
+    <div className="bg-white border border-outline-variant/15 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-1">Your Spiney</p>
+          <h3 className="text-xl font-black tracking-tight text-on-surface">{evolutionName(li.level)}</h3>
+          <p className="text-[11px] text-on-surface/50 mt-1">Today's score: <span className="font-mono font-bold">{state.todayScore}%</span></p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40">Level</p>
+          <p className="text-3xl font-black tracking-tighter text-secondary font-mono">{li.level}</p>
+        </div>
+      </div>
+      <div className="flex justify-center my-4">
+        <Spiney mood={mood} size={170} />
+      </div>
+      <div className="mt-4">
+        <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-on-surface/50 mb-1">
+          <span>XP</span>
+          <span className="font-mono">{li.xpInLevel} / 1000</span>
+        </div>
+        <div className="h-2.5 bg-surface-container-low rounded-full overflow-hidden">
+          <div className="h-full bg-secondary rounded-full transition-all" style={{ width: `${li.pct}%` }} />
+        </div>
+        <p className="text-[10px] text-on-surface/40 mt-2 text-center">Next: {evolutionName(li.level + 1)}</p>
+      </div>
+    </div>
+  );
+};
+
+const QuestRow: React.FC<{ id: 'sit_upright' | 'send_sticker' | 'win_duel' }> = ({ id }) => {
+  const { state, claimQuest } = useGamification();
+  const q = state.quests[id];
+  const pct = Math.min(100, Math.round((q.progress / q.goal) * 100));
+  return (
+    <div className="bg-white p-4 rounded-2xl border border-outline-variant/10">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {q.completed ? (
+            <span className="material-symbols-outlined text-tertiary-fixed-dim">check_circle</span>
+          ) : (
+            <span className="material-symbols-outlined text-on-surface/40">radio_button_unchecked</span>
+          )}
+          <p className="text-sm font-bold text-on-surface">{q.title}</p>
+        </div>
+        <div className="flex items-center gap-1 text-secondary">
+          <span className="material-symbols-outlined text-base">diamond</span>
+          <span className="text-xs font-black font-mono">{q.reward}</span>
+        </div>
+      </div>
+      <div className="h-2 bg-surface-container-low rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${q.completed ? 'bg-tertiary-fixed-dim' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 font-mono">
+          {q.progress} / {q.goal}
+        </span>
+        {q.completed && !q.claimed && (
+          <button
+            onClick={() => claimQuest(q.id)}
+            className="text-[10px] uppercase tracking-widest font-bold bg-secondary text-white px-3 py-1 rounded-full hover:opacity-90"
+          >
+            Claim
+          </button>
+        )}
+        {q.claimed && (
+          <span className="text-[10px] uppercase tracking-widest font-bold text-tertiary-fixed-dim">Claimed</span>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const Dashboard: React.FC = () => {
   return (
@@ -109,6 +189,28 @@ export const Dashboard: React.FC = () => {
               <p className="text-[11px] md:text-sm text-on-surface/60 leading-relaxed italic">
                 "We noticed a slight right-leaning tendency during your last 2 sessions. Try adjusting your monitor 5cm to the left."
               </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mt-6 md:mt-8">
+          <div className="lg:col-span-5">
+            <SpineyPanel />
+          </div>
+          <div className="lg:col-span-7 bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem]">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight text-on-surface">Daily Quests</h3>
+                <p className="text-xs text-on-surface/40">Resets at midnight</p>
+              </div>
+              <Link to="/passport" className="text-[10px] uppercase font-bold tracking-widest text-primary hover:underline">
+                View stamps →
+              </Link>
+            </div>
+            <div className="space-y-3">
+              <QuestRow id="sit_upright" />
+              <QuestRow id="send_sticker" />
+              <QuestRow id="win_duel" />
             </div>
           </div>
         </div>

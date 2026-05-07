@@ -163,8 +163,8 @@ export const Insights: React.FC = () => {
       value: loading ? '—' : String(totalAlerts),
       sub: totalAlerts > 20 ? 'HIGH' : totalAlerts > 8 ? 'AMBER' : 'LOW',
       color: 'text-secondary',
-      subBg: 'bg-[#fef3c7]',
-      subTextColor: 'text-[#b45309]',
+      subBg: 'bg-spine-warn/15',
+      subTextColor: 'text-spine-warn',
     },
   ];
 
@@ -173,7 +173,7 @@ export const Insights: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F9FB]">
+    <div className="flex flex-col min-h-screen bg-spine-bg">
       <style>{`
         @media print {
           .no-print { display: none !important; }

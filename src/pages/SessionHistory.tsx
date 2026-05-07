@@ -153,7 +153,7 @@ export const SessionHistory: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 bg-[#f8f9ff] print:hidden">
+      <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 bg-spine-bg print:hidden">
         <div className="flex items-center gap-4">
           <span className="text-xl md:text-2xl font-black tracking-tighter text-on-surface">PostureAI</span>
         </div>

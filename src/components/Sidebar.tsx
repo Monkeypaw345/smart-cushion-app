@@ -1,65 +1,98 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { useGamification } from '../lib/gamification';
 
-const navItems = [
-  { icon: 'dashboard', label: 'Home', path: '/' },
-  { icon: 'videocam', label: 'Live Monitor', path: '/live-monitor' },
-  { icon: 'insights', label: 'Insights', path: '/insights' },
-  { icon: 'psychology', label: 'AI Advisor', path: '/ai-advisor' },
-  { icon: 'history', label: 'Session History', path: '/history' },
-  { icon: 'settings', label: 'Settings', path: '/settings' },
+const mainItems = [
+  { icon: 'home',     label: 'My Posture', path: '/live-monitor' },
+  { icon: 'trending_up', label: 'Coach',   path: '/' },
+  { icon: 'list_alt', label: 'My Journey', path: '/history' },
+  { icon: 'insights', label: 'Insights',   path: '/insights' },
 ];
 
+const capyItems = [
+  { icon: 'palette',         label: 'Sticker Shop', path: '/shop' },
+  { icon: 'star',            label: 'Squad Hub',    path: '/squad' },
+  { icon: 'menu_book',       label: 'My Passport',  path: '/passport' },
+];
+
+const aiItems = [
+  { icon: 'forum', label: 'AI Pal', path: '/ai-advisor' },
+];
+
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    'mx-3 px-4 py-2.5 flex items-center gap-3 rounded-2xl transition-colors text-sm',
+    isActive
+      ? 'bg-capy-active text-capy-brown font-bold shadow-sm'
+      : 'text-capy-brown hover:bg-capy-hover font-medium'
+  );
+
+const sectionLabel = 'px-6 mt-6 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-capy-muted-2';
+
 export const Sidebar: React.FC = () => {
+  const { state } = useGamification();
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-[#eff4ff] flex flex-col py-8 gap-y-2 hidden md:flex z-50 border-r border-outline-variant/10">
-      <div className="px-8 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined">medical_services</span>
-          </div>
-          <div>
-            <h2 className="text-sm uppercase tracking-widest font-bold text-on-surface">Clinical Portal</h2>
-            <p className="text-[10px] text-on-surface/50 font-bold uppercase tracking-widest mt-1">Dr. Smith's Dashboard</p>
-          </div>
-        </div>
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-capy-sidebar flex flex-col py-6 hidden md:flex z-50 border-r border-capy-border overflow-y-auto custom-scrollbar">
+      <div className="px-6 mb-2">
+        <h2 className="text-2xl font-black tracking-tight text-capy-brown leading-none">Capy Squad</h2>
+        <p className="text-sm text-capy-muted font-medium mt-1">Posture Coach</p>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-y-1">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              cn(
-                "ml-4 pl-4 py-3 flex items-center gap-4 transition-all rounded-l-full font-bold text-sm uppercase tracking-widest",
-                isActive
-                  ? "text-primary bg-white/50 translate-x-1"
-                  : "text-on-surface/70 hover:text-primary hover:bg-white/30"
-              )
-            }
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
+      <nav className="flex-1 flex flex-col">
+        <p className={sectionLabel}>Main</p>
+        <div className="mx-3 px-4 py-2.5 flex items-center gap-3 rounded-2xl text-sm text-capy-brown font-bold">
+          <span className="text-base">👋</span>
+          <span>Welcome, [User]!</span>
+        </div>
+        {mainItems.map(item => (
+          <NavLink key={item.path} to={item.path} className={linkClass}>
+            <span className="material-symbols-outlined text-xl">{item.icon}</span>
             <span>{item.label}</span>
           </NavLink>
         ))}
+
+        <p className={sectionLabel}>Capy Squad</p>
+        {capyItems.map(item => (
+          <NavLink key={item.path} to={item.path} className={linkClass}>
+            <span className="material-symbols-outlined text-xl">{item.icon}</span>
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+
+        <p className={sectionLabel}>AI Advisor</p>
+        {aiItems.map(item => (
+          <NavLink key={item.path} to={item.path} className={linkClass}>
+            <span className="material-symbols-outlined text-xl">{item.icon}</span>
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+
+        <NavLink to="/settings" className={linkClass}>
+          <span className="material-symbols-outlined text-xl">settings</span>
+          <span>Settings</span>
+        </NavLink>
       </nav>
 
-      <div className="mt-auto px-4 space-y-4">
-        <button className="w-full py-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-lg shadow-primary/10">
-          <span className="material-symbols-outlined text-sm">add_circle</span>
-          <span className="text-xs uppercase tracking-widest">Start New Session</span>
-        </button>
-        
-        <div className="pt-4 border-t border-outline-variant/20 flex flex-col gap-1">
-          <a href="#" className="flex items-center gap-4 text-on-surface/70 hover:text-primary ml-4 py-2 transition-all text-xs uppercase tracking-widest font-bold">
-            <span className="material-symbols-outlined text-sm">help</span> Help Center
-          </a>
-          <a href="#" className="flex items-center gap-4 text-on-surface/70 hover:text-primary ml-4 py-2 transition-all text-xs uppercase tracking-widest font-bold">
-            <span className="material-symbols-outlined text-sm">logout</span> Logout
-          </a>
+      {/* Capy mascot avatar floating above the cash pill */}
+      <div className="px-4 relative">
+        <img
+          src="/capy-good.png"
+          alt="Capy"
+          className="absolute -top-10 right-2 w-14 h-14 object-contain drop-shadow-md pointer-events-none"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        />
+      </div>
+
+      <div className="mx-4 mt-4 bg-capy-card border border-capy-border rounded-2xl px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-capy-amber inline-block" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-black text-capy-text text-sm">Capy Cash</span>
+            <span className="text-[10px] text-capy-muted">{state.streak}-day streak ★</span>
+          </div>
         </div>
+        <span className="font-black font-mono text-capy-brown">{state.gems}</span>
       </div>
     </aside>
   );

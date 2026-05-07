@@ -13,7 +13,7 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 bg-[#f8f9ff] fixed top-0 z-50 border-b border-outline-variant/10">
+      <header className="flex justify-between items-center w-full px-4 md:px-8 py-4 bg-spine-bg fixed top-0 z-50 border-b border-outline-variant/10">
         <div className="text-xl md:text-2xl font-black tracking-tighter text-on-surface">PostureAI</div>
         <nav className="hidden md:flex gap-8 items-center font-['Inter'] font-medium tracking-tight">
           <a className="text-on-surface/60 hover:text-primary transition-colors duration-200" href="#">Support</a>

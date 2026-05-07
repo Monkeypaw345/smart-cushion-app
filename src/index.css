@@ -4,26 +4,27 @@
 
 @layer base {
   :root {
-    --background: 240 100% 99%;
-    --foreground: 213 62% 12%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 175 100% 20%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 263 76% 52%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 175 100% 20%;
-    --radius: 0.75rem;
+    /* Capy Squad warm theme HSL tokens */
+    --background: 35 50% 92%;        /* #f5ede0 */
+    --foreground: 24 33% 18%;        /* #3d2b1f */
+    --card: 33 56% 97%;              /* #fdf8f3 */
+    --card-foreground: 24 33% 18%;
+    --popover: 33 56% 97%;
+    --popover-foreground: 24 33% 18%;
+    --primary: 26 41% 39%;           /* #8B5E3C */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 67% 50%;         /* #D4922A */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 35 50% 86%;             /* #ede0d0 */
+    --muted-foreground: 24 23% 44%;  /* #8a6a55 */
+    --accent: 35 64% 91%;            /* #faebd7 */
+    --accent-foreground: 24 33% 18%;
+    --destructive: 11 50% 52%;       /* #c0614a */
+    --destructive-foreground: 0 0% 100%;
+    --border: 35 49% 71%;            /* #d4b896 */
+    --input: 35 49% 71%;
+    --ring: 26 41% 39%;
+    --radius: 1rem;
   }
 }
 
@@ -31,26 +32,42 @@
   * {
     @apply border-border;
   }
+  html, body, #root {
+    background-color: #f3d4ce;
+    color: #3d2b1f;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Warm-theme overrides for legacy literals
+ * ------------------------------------------------------------------------- */
+@layer utilities {
+  .bg-white         { background-color: #fce5dd !important; }
+  .bg-white\/90     { background-color: rgba(252, 229, 221, 0.9) !important; }
+  .bg-white\/80     { background-color: rgba(252, 229, 221, 0.8) !important; }
+  .bg-white\/50     { background-color: rgba(217, 154, 154, 0.35) !important; }
+  .bg-white\/30     { background-color: rgba(217, 154, 154, 0.20) !important; }
+}
+
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(139, 94, 60, 0.3); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(139, 94, 60, 0.5); }
+
+/* Recharts styling */
+.recharts-cartesian-grid line { stroke: #d4b896 !important; }
+.recharts-text, .recharts-cartesian-axis-tick-value tspan { fill: #8a6a55 !important; }
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #fdf8f3 !important;
+  border: 1px solid #d4b896 !important;
+  border-radius: 14px !important;
+  color: #3d2b1f !important;
 }
