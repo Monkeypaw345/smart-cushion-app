@@ -63,25 +63,17 @@ export const LiveMonitor: React.FC = () => {
   const ws = useWebSocket();
   const msg = ws.lastMessage;
 
-  // ---- Manual/sim override (for demo without hardware) ----
-  const [simMode, setSimMode] = useState<PostureMode | null>(null);
-
   // ---- Real data from fog ----
-  const occupiedReal = msg?.occupancy_state === 'occupied';
-  const realSensors: Sensors | null = msg?.sensors_heatmap_pct?.length === 9
+  const occupied = msg?.occupancy_state === 'occupied';
+  const sensors: Sensors = msg?.sensors_heatmap_pct?.length === 9
     ? {
         FL: msg.sensors_heatmap_pct[0], FM: msg.sensors_heatmap_pct[1], FR: msg.sensors_heatmap_pct[2],
         ML: msg.sensors_heatmap_pct[3], MM: msg.sensors_heatmap_pct[4], MR: msg.sensors_heatmap_pct[5],
         BL: msg.sensors_heatmap_pct[6], BM: msg.sensors_heatmap_pct[7], BR: msg.sensors_heatmap_pct[8],
       }
-    : null;
+    : ZERO_SENSORS;
 
-  // ---- Effective view: sim overrides real when set ----
-  const mode: PostureMode = simMode ?? (realSensors ? modeFromSensors(realSensors, occupiedReal) : 'empty');
-  const sensors: Sensors = simMode
-    ? MOCK_SENSORS[simMode]
-    : realSensors ?? ZERO_SENSORS;
-  const occupied = simMode ? simMode !== 'empty' : occupiedReal;
+  const mode: PostureMode = modeFromSensors(sensors, occupied);
 
   const sessionDuration = msg?.session_duration_sec ?? 0;
   const poorDuration    = msg?.poor_posture_duration_sec ?? 0;
@@ -143,19 +135,6 @@ export const LiveMonitor: React.FC = () => {
   return (
     <div className="mx-auto max-w-6xl text-capy-text px-4 md:px-8 py-6 md:py-8 space-y-6">
 
-      {/* Simulation buttons — keep until real hardware feed is verified */}
-      <div className="flex flex-wrap gap-2 rounded-xl bg-capy-card border border-capy-border p-3 shadow-inner items-center">
-        <span className="font-bold text-capy-muted text-xs uppercase tracking-widest mr-2 ml-1">Test Hardware:</span>
-        <button onClick={() => setSimMode('left')}    className="rounded-lg bg-capy-danger hover:opacity-90 px-3 py-1.5 text-white font-bold text-xs uppercase tracking-widest transition">Lean Left</button>
-        <button onClick={() => setSimMode('center')}  className="rounded-lg bg-capy-success hover:opacity-90 px-3 py-1.5 text-white font-bold text-xs uppercase tracking-widest transition">Center</button>
-        <button onClick={() => setSimMode('right')}   className="rounded-lg bg-capy-danger hover:opacity-90 px-3 py-1.5 text-white font-bold text-xs uppercase tracking-widest transition">Lean Right</button>
-        <button onClick={() => setSimMode('forward')} className="rounded-lg bg-capy-warn  hover:opacity-90 px-3 py-1.5 text-white font-bold text-xs uppercase tracking-widest transition">Forward</button>
-        <button onClick={() => setSimMode('empty')}   className="rounded-lg bg-capy-muted hover:opacity-90 px-3 py-1.5 text-white font-bold text-xs uppercase tracking-widest transition">Empty</button>
-        <button onClick={() => setSimMode(null)}      className="rounded-lg bg-capy-brown hover:bg-capy-brown-3 px-3 py-1.5 text-white font-bold text-xs uppercase tracking-widest transition ml-auto">
-          Use Live Sensors
-        </button>
-      </div>
-
       <div className="grid grid-cols-12 gap-6">
 
         {/* LEFT: Sensors & Alert Status */}
@@ -166,7 +145,7 @@ export const LiveMonitor: React.FC = () => {
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-capy-muted">Active Session</p>
                 <h2 className="text-2xl font-black tracking-tight">{occupied ? 'Person Detected' : 'No Person'}</h2>
-                <p className="text-sm text-capy-muted">{simMode ? `Simulated · ${mode}` : POSTURE_LABELS[posture]}</p>
+                <p className="text-sm text-capy-muted">{POSTURE_LABELS[posture]}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold uppercase tracking-wider text-capy-muted">Session</p>
