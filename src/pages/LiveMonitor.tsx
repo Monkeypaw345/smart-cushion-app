@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWebSocket, type PostureLabel } from '../hooks/useWebSocket';
 
-type PostureMode = 'center' | 'left' | 'right' | 'forward' | 'empty';
 
 // ---------------------------------------------------------------------------
 // Posture metadata
@@ -44,19 +44,46 @@ const cellClass = (val: number, occupied: boolean) => {
   return 'bg-capy-danger/25 text-capy-danger font-bold';
 };
 
-// Derive a coarse posture mode from the heatmap so the capybara reacts
-const modeFromSensors = (s: Sensors, occupied: boolean): PostureMode => {
-  if (!occupied) return 'empty';
-  const left  = s.FL + s.ML + s.BL;
-  const right = s.FR + s.MR + s.BR;
-  const front = s.FL + s.FM + s.FR;
-  const back  = s.BL + s.BM + s.BR;
-  const lat   = (right - left) / (right + left + 1);
-  const sag   = (front - back) / (front + back + 1);
-  if (sag >  0.30) return 'forward';
-  if (lat >  0.25) return 'right';
-  if (lat < -0.25) return 'left';
-  return 'center';
+
+// ---------------------------------------------------------------------------
+// Helper Component: Automatically removes white backgrounds using Canvas
+// ---------------------------------------------------------------------------
+const TransparentImage: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
+  const [processedSrc, setProcessedSrc] = useState<string>(src);
+
+  React.useEffect(() => {
+    let isCancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
+    img.onload = () => {
+      if (isCancelled) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Threshold: any pixel brighter than this will be transparent
+      const threshold = 240; 
+
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] > threshold && data[i+1] > threshold && data[i+2] > threshold) {
+          data[i + 3] = 0;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      setProcessedSrc(canvas.toDataURL());
+    };
+    return () => { isCancelled = true; };
+  }, [src]);
+
+  return <img src={processedSrc} alt={alt} className={className} />;
 };
 
 export const LiveMonitor: React.FC = () => {
@@ -73,7 +100,6 @@ export const LiveMonitor: React.FC = () => {
       }
     : ZERO_SENSORS;
 
-  const mode: PostureMode = modeFromSensors(sensors, occupied);
 
   const sessionDuration = msg?.session_duration_sec ?? 0;
   const poorDuration    = msg?.poor_posture_duration_sec ?? 0;
@@ -81,56 +107,95 @@ export const LiveMonitor: React.FC = () => {
   const alertCount      = msg?.alert_count ?? 0;
   const posture: PostureLabel = msg?.posture ?? 'EMPTY';
 
-  // ---- Visual mapping for the capybara cushion (uses PNGs from /public) ----
+  // ---- Visual mapping for the capybara cushion (Driven by AI Posture Labels) ----
   const view = useMemo(() => {
-    switch (mode) {
-      case 'right':
+    switch (posture) {
+      case 'NUP':
         return {
-          tint: 'from-capy-danger/20 to-capy-danger/30',
-          alertTitle: <>You are leaning too far right. <span className="text-capy-danger">→</span></>,
-          aiMessage: "Ouch! You're really leaning to the right. Try shifting weight to the left. Your back will thank you!",
-          image: '/capy-sad-right.png',
-          slide:  'translate-x-12 rotate-6',
+          tint: 'from-emerald-500/15 to-emerald-500/25',
+          alertTitle: <>Sitting Straight <span className="text-emerald-500">✦</span></>,
+          aiMessage: "Perfect posture! Keep it up.",
+          mood: 'good' as const,
+        };
+      case 'LF':
+        return {
+          tint: 'from-amber-500/15 to-amber-500/25',
+          alertTitle: <>Leaning Forward <span className="text-amber-500">⚠</span></>,
+          aiMessage: "Try to sit back and align your spine.",
           mood: 'bad' as const,
         };
-      case 'left':
+      case 'LB':
         return {
-          tint: 'from-capy-danger/20 to-capy-danger/30',
-          alertTitle: <><span className="text-capy-danger">←</span> You are leaning too far left.</>,
-          aiMessage: "Hey, you're leaning way left. Shift your weight back to the center!",
-          image: '/capy-sad-left.png',
-          slide: '-translate-x-12 -rotate-6',
+          tint: 'from-amber-500/15 to-amber-500/25',
+          alertTitle: <>Leaning Backward <span className="text-amber-500">⚠</span></>,
+          aiMessage: "Shift slightly forward for better balance.",
           mood: 'bad' as const,
         };
-      case 'forward':
+      case 'LFSR':
         return {
-          tint: 'from-capy-warn/20 to-capy-warn/30',
-          alertTitle: <>You are slouching forward. <span className="text-capy-warn">↓</span></>,
-          aiMessage: "Roll your shoulders back and lift your chest. Stack your spine over your hips.",
-          image: '/capy-sad-right.png',
-          slide: 'translate-y-4 scale-95',
+          tint: 'from-orange-500/15 to-orange-500/25',
+          alertTitle: <>Leaning Right <span className="text-orange-500">→</span></>,
+          aiMessage: "You're leaning right. Center your weight.",
           mood: 'bad' as const,
         };
-      case 'empty':
+      case 'LFSL':
         return {
-          tint: 'from-capy-card to-capy-border/60',
-          alertTitle: <>No person on the cushion.</>,
-          aiMessage: "Cushion is empty. Settle in when you're ready!",
-          image: '/capy-sleeping.png',
-          slide: 'translate-x-0 scale-95 opacity-80',
+          tint: 'from-orange-500/15 to-orange-500/25',
+          alertTitle: <>Leaning Left <span className="text-orange-500">←</span></>,
+          aiMessage: "You're leaning left. Center your weight.",
+          mood: 'bad' as const,
+        };
+      case 'CRL':
+        return {
+          tint: 'from-rose-500/15 to-rose-500/25',
+          alertTitle: <>Crossed Right Leg <span className="text-rose-500">✘</span></>,
+          aiMessage: "Uncross your legs for better blood flow.",
+          mood: 'bad' as const,
+        };
+      case 'CLL':
+        return {
+          tint: 'from-rose-500/15 to-rose-500/25',
+          alertTitle: <>Crossed Left Leg <span className="text-rose-500">✘</span></>,
+          aiMessage: "Uncross your legs for better blood flow.",
+          mood: 'bad' as const,
+        };
+      case 'CRLL':
+        return {
+          tint: 'from-red-600/15 to-red-600/25',
+          alertTitle: <>Right Leg Lean <span className="text-red-600">⚠</span></>,
+          aiMessage: "Avoid leaning while your legs are crossed.",
+          mood: 'bad' as const,
+        };
+      case 'CLLL':
+        return {
+          tint: 'from-red-600/15 to-red-600/25',
+          alertTitle: <>Left Leg Lean <span className="text-red-600">⚠</span></>,
+          aiMessage: "Avoid leaning while your legs are crossed.",
+          mood: 'bad' as const,
+        };
+      case 'EMPTY':
+        return {
+          tint: 'from-slate-100 to-slate-200',
+          alertTitle: <>Cushion Empty</>,
+          aiMessage: "Waiting for someone to sit down.",
+          mood: 'neutral' as const,
+        };
+      case 'OBJECT':
+        return {
+          tint: 'from-slate-200 to-slate-300',
+          alertTitle: <>Object Detected</>,
+          aiMessage: "Please remove objects from the cushion.",
           mood: 'neutral' as const,
         };
       default:
         return {
-          tint: 'from-capy-success/20 to-capy-success/30',
-          alertTitle: <>Perfect posture! <span className="text-capy-success">✦</span></>,
-          aiMessage: "Great job! You're sitting like a champion capy. Keep staying centered.",
-          image: '/capy-good.png',
-          slide: 'translate-x-0',
+          tint: 'from-slate-50 to-slate-100',
+          alertTitle: <>IDLE</>,
+          aiMessage: "Waiting for Fog Node...",
           mood: 'good' as const,
         };
     }
-  }, [mode]);
+  }, [posture]);
 
   return (
     <div className="mx-auto max-w-6xl text-capy-text px-4 md:px-8 py-6 md:py-8 space-y-6">
@@ -141,15 +206,15 @@ export const LiveMonitor: React.FC = () => {
         <div className="col-span-12 flex flex-col gap-6 lg:col-span-5">
 
           <div className="rounded-3xl bg-capy-card p-6 shadow-sm border border-capy-border">
-            <div className="mb-6 flex justify-between items-start">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-capy-muted">Active Session</p>
-                <h2 className="text-2xl font-black tracking-tight">{occupied ? 'Person Detected' : 'No Person'}</h2>
-                <p className="text-sm text-capy-muted">{POSTURE_LABELS[posture]}</p>
+            <div className="mb-6 flex justify-between items-start gap-4">
+              <div className="min-w-[240px]">
+                <p className="text-xs font-bold uppercase tracking-wider text-capy-muted mb-1">Active Session</p>
+                <h2 className="text-2xl font-black tracking-tight leading-tight">{occupied ? 'Person Detected' : 'No Person'}</h2>
+                <p className="mt-1 text-xs font-medium text-capy-muted/80">{POSTURE_LABELS[posture]}</p>
               </div>
-              <div className="text-right">
-                <p className="text-xs font-bold uppercase tracking-wider text-capy-muted">Session</p>
-                <p className="text-xl font-mono font-bold text-capy-brown">{fmt(sessionDuration)}</p>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-capy-muted mb-1">Duration</p>
+                <p className="text-xl font-mono font-bold text-capy-brown tracking-wider">{fmt(sessionDuration)}</p>
               </div>
             </div>
 
@@ -205,43 +270,78 @@ export const LiveMonitor: React.FC = () => {
 
             {/* Organic wavy cushion background — color reacts to posture */}
             <div
-              className={`relative mt-12 flex h-72 w-72 items-center justify-center bg-gradient-to-br shadow-inner transition-colors duration-700 ${view.tint}`}
+              className={`relative mt-12 flex h-72 w-72 items-center justify-center bg-gradient-to-br transition-colors duration-700 shadow-[inset_0_0_40px_rgba(255,255,255,0.3)] ${view.tint}`}
               style={{ borderRadius: '43% 57% 65% 35% / 45% 45% 55% 55%' }}
             >
-              <img
-                src={view.image}
-                alt="Capybara"
-                className={`z-10 w-56 object-contain drop-shadow-xl transition-all duration-500 ease-in-out ${view.slide}`}
-              />
+              <div className="relative w-64 h-64 flex items-center justify-center pointer-events-none">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={posture}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                    className="z-10 w-full h-full flex items-center justify-center"
+                  >
+                    <TransparentImage
+                      src={
+                        posture === 'NUP'  ? '/assets/capybara/postures/nup.png' :
+                        posture === 'LF'   ? '/assets/capybara/postures/lf.png' :
+                        posture === 'LB'   ? '/assets/capybara/postures/lb.png' :
+                        posture === 'LFSR' ? '/assets/capybara/postures/lfsr.png' :
+                        posture === 'LFSL' ? '/assets/capybara/postures/lfsl.png' :
+                        posture === 'CRL'  ? '/assets/capybara/postures/crl.png' :
+                        posture === 'CLL'  ? '/assets/capybara/postures/cll.png' :
+                        posture === 'CRLL' ? '/assets/capybara/postures/crll.png' : 
+                        posture === 'CLLL' ? '/assets/capybara/postures/clll.png' : 
+                        '/assets/capybara/logo.png'
+                      }
+                      alt="Capybara Coach"
+                      className="w-full h-full object-contain"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
 
-            <h2 className="mt-8 text-center text-3xl font-black tracking-tight transition-all duration-300 px-4">
+
+            <h2 className="mt-8 text-center text-3xl font-black tracking-tight transition-all duration-300 px-4 min-h-[40px]">
               {view.alertTitle}
             </h2>
 
-            <div className="mt-6 flex max-w-md items-start gap-3 px-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-capy-amber-soft border border-capy-border text-xl shadow-sm">
-                🦫
+            {/* Fixed height container for AI Message and Button to prevent layout shifting */}
+            <div className="mt-6 flex flex-col items-center min-h-[140px]">
+              <div className="flex max-w-md items-start gap-3 px-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-capy-amber-soft border border-capy-border text-xl shadow-sm">
+                  🦫
+                </div>
+                <div className={`relative rounded-2xl rounded-tl-none px-5 py-4 text-sm font-medium shadow-sm border transition-all duration-300 ${
+                  view.mood === 'good'
+                    ? 'bg-capy-success/10 text-capy-success border-capy-success/40'
+                    : view.mood === 'bad'
+                    ? 'bg-capy-danger/10 text-capy-danger border-capy-danger/30'
+                    : 'bg-capy-amber-soft text-capy-brown-3 border-capy-border'
+                }`}>
+                  {view.aiMessage}
+                </div>
               </div>
-              <div className={`relative rounded-2xl rounded-tl-none px-5 py-4 text-sm font-medium shadow-sm border ${
-                view.mood === 'good'
-                  ? 'bg-capy-success/10 text-capy-success border-capy-success/40'
-                  : view.mood === 'bad'
-                  ? 'bg-capy-danger/10 text-capy-danger border-capy-danger/30'
-                  : 'bg-capy-amber-soft text-capy-brown-3 border-capy-border'
-              }`}>
-                {view.aiMessage}
+
+              {/* Reserve space for button so it doesn't push the layout when it appears */}
+              <div className="h-20 flex items-center justify-center">
+                <AnimatePresence>
+                  {view.mood === 'bad' && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="rounded-xl bg-capy-danger hover:opacity-90 px-8 py-3 font-bold text-white shadow-md transition-all active:scale-95"
+                    >
+                      Got it, I'll adjust!
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-
-            {view.mood === 'bad' && (
-              <button
-                onClick={() => setSimMode('center')}
-                className="mt-6 rounded-xl bg-capy-danger hover:opacity-90 px-6 py-3 font-bold text-white shadow-sm transition"
-              >
-                OK, adjusted!
-              </button>
-            )}
           </div>
         </div>
       </div>
