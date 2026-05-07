@@ -14,9 +14,7 @@ export const CapyTopBar: React.FC = () => {
 
   const msg = lastMessage;
   const occupied = msg?.occupancy_state === 'occupied';
-  const goodPct = msg ? Math.round(msg.good_posture_pct) : 0;
   const session = msg?.session_duration_sec ?? 0;
-  const goodSecs = Math.floor((session * goodPct) / 100);
 
   const isConnected = status === 'connected';
 
@@ -46,10 +44,10 @@ export const CapyTopBar: React.FC = () => {
         </span>
       </div>
 
-      <div className="flex items-center gap-4 md:gap-6">
+      <div className="flex items-center gap-4 md:gap-8">
         <div className="text-right hidden sm:block">
-          <p className="text-[10px] uppercase tracking-widest text-capy-card/70">Good Posture (Live)</p>
-          <p className="font-mono font-bold text-lg tracking-widest">{fmt(goodSecs)}</p>
+          <p className="text-[10px] uppercase tracking-widest text-capy-card/70 font-black mb-0.5">Session Time (Live)</p>
+          <p className="font-mono font-bold text-lg tracking-widest leading-none">{fmt(session)}</p>
         </div>
         <div className="hidden md:flex items-center gap-1 bg-capy-success/30 border border-capy-success/60 text-capy-success-soft rounded-full px-3 py-1">
           <span className="w-1.5 h-1.5 rounded-full bg-capy-success-soft inline-block animate-pulse" />
