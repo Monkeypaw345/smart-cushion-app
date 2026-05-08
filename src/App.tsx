@@ -6,8 +6,6 @@ import { Insights } from './pages/Insights';
 import { AIAdvisor } from './pages/AIAdvisor';
 import { SessionHistory } from './pages/SessionHistory';
 import { Settings } from './pages/Settings';
-import { Shop } from './pages/Shop';
-import { Squad } from './pages/Squad';
 import { Passport } from './pages/Passport';
 import { LoginPage } from './pages/LoginPage';
 import { ProtectedRoute } from './components/ProtectedRoute';

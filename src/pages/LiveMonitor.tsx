@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWebSocket, type PostureLabel } from '../hooks/useWebSocket';
 
@@ -22,13 +22,6 @@ const POSTURE_LABELS: Record<PostureLabel, string> = {
 
 interface Sensors { FL: number; FM: number; FR: number; ML: number; MM: number; MR: number; BL: number; BM: number; BR: number; }
 const ZERO_SENSORS: Sensors = { FL:0, FM:0, FR:0, ML:0, MM:0, MR:0, BL:0, BM:0, BR:0 };
-const MOCK_SENSORS: Record<PostureMode, Sensors> = {
-  center:  { FL: 30, FM: 50, FR: 30, ML: 40, MM: 70, MR: 40, BL: 35, BM: 55, BR: 35 },
-  left:    { FL: 70, FM: 30, FR: 8,  ML: 78, MM: 30, MR: 10, BL: 65, BM: 25, BR: 5  },
-  right:   { FL: 5,  FM: 20, FR: 85, ML: 10, MM: 30, MR: 88, BL: 8,  BM: 15, BR: 70 },
-  forward: { FL: 75, FM: 80, FR: 70, ML: 35, MM: 40, MR: 32, BL: 8,  BM: 10, BR: 8  },
-  empty:   ZERO_SENSORS,
-};
 
 const fmt = (secs: number) => {
   const h = String(Math.floor(secs / 3600)).padStart(2, '0');

@@ -1,5 +1,6 @@
 import React from 'react';
-import { SpineySticker, StickerKind } from './SpineyStickers';
+import { SpineySticker } from './SpineyStickers';
+import type { StickerKind } from './SpineyStickers';
 
 export type StickerType = StickerKind;
 
