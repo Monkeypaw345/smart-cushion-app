@@ -1,17 +1,27 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { TransparentImage } from '../components/TransparentImage';
+import { CapySticker, StickerType } from '../components/CapySticker';
 
-const STICKERS = [
-  { id: 'Hot Spring Capy', rarity: 'R',   path: '/assets/capybara/postures/cll.png' },
-  { id: 'Crown Capy',      rarity: 'R',   path: '/assets/capybara/postures/crl_v2.png' },
-  { id: 'Flex Capy',       rarity: 'R',   path: '/assets/capybara/postures/lf.png' },
-  { id: 'Flat Capy',       rarity: 'SR',  path: '/assets/capybara/postures/lb_v2.png' },
-  { id: 'Sleepy Capy',     rarity: 'SR',  path: '/assets/capybara/postures/clll.png' },
-  { id: 'Bandage Capy',    rarity: 'SR',  path: '/assets/capybara/postures/lb.png' },
-  { id: 'Running Capy',    rarity: 'SSR', path: '/assets/capybara/postures/lfsl_v2.png' },
-  { id: 'Dumbbell Capy',   rarity: 'SSR', path: '/assets/capybara/postures/lfsr_v2.png' },
-  { id: 'Iceberge Capy',   rarity: 'SSR', path: '/assets/capybara/postures/crll.png' },
+const STICKERS: { id: StickerType; rarity: string }[] = [
+  // R
+  { id: 'Basic Happy',   rarity: 'R' },
+  { id: 'Basic Neutral', rarity: 'R' },
+  { id: 'Basic Sad',     rarity: 'R' },
+  { id: 'Sleepy',        rarity: 'R' },
+  { id: 'Hungry',        rarity: 'R' },
+  { id: 'Cool',          rarity: 'R' },
+  { id: 'Angry',         rarity: 'R' },
+  { id: 'Blushing',      rarity: 'R' },
+  // SR
+  { id: 'Hot Spring',    rarity: 'SR' },
+  { id: 'Chef',          rarity: 'SR' },
+  { id: 'Gamer',         rarity: 'SR' },
+  { id: 'Wizard',        rarity: 'SR' },
+  { id: 'Detective',     rarity: 'SR' },
+  // SSR
+  { id: 'Flex',          rarity: 'SSR' },
+  { id: 'Astronaut',     rarity: 'SSR' },
+  { id: 'King',          rarity: 'SSR' },
 ];
 
 const RARITY_STYLES: Record<string, string> = {
@@ -53,8 +63,8 @@ export const CollectionPage: React.FC = () => {
                 {sticker.rarity}
               </div>
 
-              <div className={`w-32 h-32 relative mb-4 flex items-center justify-center ${!isUnlocked ? 'brightness-0 opacity-20' : ''}`}>
-                <TransparentImage src={sticker.path} alt={sticker.id} className="w-full h-full object-contain" />
+              <div className="w-32 h-32 relative mb-4 flex items-center justify-center">
+                <CapySticker type={sticker.id} size={120} silhouette={!isUnlocked} />
               </div>
 
               <h3 className={`text-sm font-black text-center ${!isUnlocked ? 'text-capy-muted/40' : 'text-capy-brown'}`}>

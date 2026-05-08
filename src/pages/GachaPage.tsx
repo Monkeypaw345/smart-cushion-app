@@ -1,21 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { TransparentImage } from '../components/TransparentImage';
+import { CapySticker, StickerType } from '../components/CapySticker';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-
-const STICKER_MAP: Record<string, string> = {
-  'Hot Spring Capy': '/assets/capybara/postures/cll.png',
-  'Crown Capy':      '/assets/capybara/postures/crl_v2.png',
-  'Flex Capy':       '/assets/capybara/postures/lf.png',
-  'Flat Capy':       '/assets/capybara/postures/lb_v2.png',
-  'Sleepy Capy':     '/assets/capybara/postures/clll.png',
-  'Bandage Capy':    '/assets/capybara/postures/lb.png',
-  'Running Capy':    '/assets/capybara/postures/lfsl_v2.png',
-  'Dumbbell Capy':   '/assets/capybara/postures/lfsr_v2.png',
-  'Iceberge Capy':   '/assets/capybara/postures/crll.png',
-};
 
 const RARITY_COLORS: Record<string, string> = {
   'R':   'bg-slate-400',
@@ -26,7 +14,7 @@ const RARITY_COLORS: Record<string, string> = {
 export const GachaPage: React.FC = () => {
   const { user, refreshUser, isDemo } = useAuth();
   const [rolling, setRolling] = useState(false);
-  const [result, setResult] = useState<{ item: string; rarity: string; isNew: boolean } | null>(null);
+  const [result, setResult] = useState<{ item: StickerType; rarity: string; isNew: boolean } | null>(null);
 
   const handleRoll = async () => {
     if (rolling) return;
@@ -178,7 +166,7 @@ export const GachaPage: React.FC = () => {
               </div>
 
               <div className="w-48 h-48 mx-auto mb-6 p-4">
-                <TransparentImage src={STICKER_MAP[result.item]} alt={result.item} className="w-full h-full object-contain" />
+                <CapySticker type={result.item} size={180} />
               </div>
 
               <h2 className="text-2xl font-black text-capy-brown mb-2">{result.item}</h2>
