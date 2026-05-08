@@ -1,38 +1,31 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { CapySticker, StickerType } from '../components/CapySticker';
+import { SpineySticker } from '../components/SpineyStickers';
+import type { StickerKind } from '../components/SpineyStickers';
 
-const STICKERS: { id: StickerType; rarity: string }[] = [
-  // R
-  { id: 'Basic Happy',   rarity: 'R' },
-  { id: 'Basic Neutral', rarity: 'R' },
-  { id: 'Basic Sad',     rarity: 'R' },
-  { id: 'Sleepy',        rarity: 'R' },
-  { id: 'Hungry',        rarity: 'R' },
-  { id: 'Cool',          rarity: 'R' },
-  { id: 'Angry',         rarity: 'R' },
-  { id: 'Blushing',      rarity: 'R' },
-  // SR
-  { id: 'Hot Spring',    rarity: 'SR' },
-  { id: 'Chef',          rarity: 'SR' },
-  { id: 'Gamer',         rarity: 'SR' },
-  { id: 'Wizard',        rarity: 'SR' },
-  { id: 'Detective',     rarity: 'SR' },
-  // SSR
-  { id: 'Flex',          rarity: 'SSR' },
-  { id: 'Astronaut',     rarity: 'SSR' },
-  { id: 'King',          rarity: 'SSR' },
+const STICKERS: { id: StickerKind; rarity: string }[] = [
+  { id: 'slouch',   rarity: 'R' },
+  { id: 'bandage',  rarity: 'R' },
+  { id: 'tired',    rarity: 'R' },
+  { id: 'sparkles', rarity: 'R' },
+  { id: 'running',  rarity: 'SR' },
+  { id: 'dumbbell', rarity: 'SR' },
+  { id: 'sleeping', rarity: 'SR' },
+  { id: 'crown',    rarity: 'SSR' },
+  { id: 'flex',     rarity: 'SSR' },
 ];
 
 const RARITY_STYLES: Record<string, string> = {
-  'R':   'text-slate-400 border-slate-200 bg-slate-50',
-  'SR':  'text-amber-600 border-amber-200 bg-amber-50',
-  'SSR': 'text-purple-600 border-purple-200 bg-purple-50',
+  'R':   'text-sky-600 border-sky-200 bg-sky-50',
+  'SR':  'text-purple-600 border-purple-200 bg-purple-50',
+  'SSR': 'text-amber-600 border-amber-200 bg-amber-50',
 };
 
 export const CollectionPage: React.FC = () => {
   const { user } = useAuth();
   const unlockedCount = user?.collection?.length || 0;
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto">
@@ -64,11 +57,13 @@ export const CollectionPage: React.FC = () => {
               </div>
 
               <div className="w-32 h-32 relative mb-4 flex items-center justify-center">
-                <CapySticker type={sticker.id} size={120} silhouette={!isUnlocked} />
+                <div style={!isUnlocked ? { filter: 'brightness(0)', opacity: 0.2 } : {}}>
+                  <SpineySticker kind={sticker.id} size={110} />
+                </div>
               </div>
 
               <h3 className={`text-sm font-black text-center ${!isUnlocked ? 'text-capy-muted/40' : 'text-capy-brown'}`}>
-                {isUnlocked ? sticker.id : '???'}
+                {isUnlocked ? capitalize(sticker.id) : '???'}
               </h3>
               
               {!isUnlocked && (

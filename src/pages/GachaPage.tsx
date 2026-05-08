@@ -1,31 +1,40 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { CapySticker, StickerType } from '../components/CapySticker';
+import { SpineySticker } from '../components/SpineyStickers';
+import type { StickerKind } from '../components/SpineyStickers';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 const RARITY_COLORS: Record<string, string> = {
-  'R':   'bg-slate-400',
-  'SR':  'bg-capy-amber',
-  'SSR': 'bg-purple-600 animate-pulse',
+  'R':   'bg-sky-400',
+  'SR':  'bg-purple-500',
+  'SSR': 'bg-amber-500 animate-pulse',
 };
 
 export const GachaPage: React.FC = () => {
   const { user, refreshUser, isDemo } = useAuth();
   const [rolling, setRolling] = useState(false);
-  const [result, setResult] = useState<{ item: StickerType; rarity: string; isNew: boolean } | null>(null);
+  const [result, setResult] = useState<{ item: string; rarity: string; isNew: boolean } | null>(null);
+
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
 
   const handleRoll = async () => {
     if (rolling) return;
     if (isDemo) {
-      alert("Demo users can't spend real Gems! (But you can try in the full version)");
+      setErrorModal({ 
+        title: "Demo Mode", 
+        message: "Demo users can't spend real Gems! (But you can try in the full version)" 
+      });
       return;
     }
     
     const hasFreeSpins = (user?.free_spins || 0) > 0;
     if (!hasFreeSpins && (user?.gems || 0) < 10) {
-      alert("Not enough Gems! Keep sitting correctly to earn more.");
+      setErrorModal({ 
+        title: "Out of Gems", 
+        message: "Not enough Gems! Keep sitting correctly to earn more." 
+      });
       return;
     }
 
@@ -52,14 +61,16 @@ export const GachaPage: React.FC = () => {
           setRolling(false);
         }, 1500);
       } else {
-        alert("Roll failed. Please try again.");
+        setErrorModal({ title: "Roll Failed", message: "Server had a hiccup. Please try again." });
         setRolling(false);
       }
     } catch (err) {
-      alert("Connection error.");
+      setErrorModal({ title: "Connection Error", message: "Could not connect to the Capy Server." });
       setRolling(false);
     }
   };
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto">
@@ -122,16 +133,16 @@ export const GachaPage: React.FC = () => {
           <div className="bg-capy-card border border-capy-border rounded-3xl p-6 shadow-sm">
             <h3 className="font-black text-capy-brown uppercase tracking-widest text-xs mb-4">Gacha Rates</h3>
             <div className="space-y-3">
-              <div className="flex justify-between items-center bg-slate-100 p-3 rounded-xl">
-                <span className="font-bold text-slate-600">R (Common)</span>
+              <div className="flex justify-between items-center bg-sky-50 p-3 rounded-xl border border-sky-100">
+                <span className="font-bold text-sky-700">R (Common)</span>
                 <span className="font-black">75%</span>
               </div>
-              <div className="flex justify-between items-center bg-amber-100 p-3 rounded-xl border border-amber-200">
-                <span className="font-bold text-amber-700">SR (Rare)</span>
+              <div className="flex justify-between items-center bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <span className="font-bold text-purple-700">SR (Rare)</span>
                 <span className="font-black">20%</span>
               </div>
-              <div className="flex justify-between items-center bg-purple-100 p-3 rounded-xl border border-purple-200">
-                <span className="font-bold text-purple-700">SSR (Super Rare)</span>
+              <div className="flex justify-between items-center bg-amber-50 p-3 rounded-xl border border-amber-200">
+                <span className="font-bold text-amber-700">SSR (Super Rare)</span>
                 <span className="font-black">5%</span>
               </div>
             </div>
@@ -146,6 +157,34 @@ export const GachaPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Notification / Error Modal */}
+      <AnimatePresence>
+        {errorModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-capy-brown/40 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-capy-card border-4 border-capy-brown rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center"
+            >
+              <div className="text-4xl mb-4">💡</div>
+              <h3 className="text-xl font-black text-capy-brown mb-2 uppercase">{errorModal.title}</h3>
+              <p className="text-capy-muted font-bold text-sm mb-6">{errorModal.message}</p>
+              <button 
+                onClick={() => setErrorModal(null)}
+                className="w-full bg-capy-brown text-white font-black py-3 rounded-xl hover:bg-capy-brown/90 transition-colors"
+              >
+                Got it
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Result Modal */}
       <AnimatePresence>
@@ -162,14 +201,19 @@ export const GachaPage: React.FC = () => {
               className="bg-capy-card rounded-[3rem] p-10 max-w-sm w-full shadow-2xl text-center relative"
             >
               <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full text-white font-black tracking-[0.3em] uppercase text-xs ${RARITY_COLORS[result.rarity]}`}>
-                {result.rarity === 'SSR' ? '🔥 SSR DROP 🔥' : result.rarity}
+                {result.rarity === 'SSR' ? '✨ SSR UNLOCKED ✨' : result.rarity}
               </div>
 
-              <div className="w-48 h-48 mx-auto mb-6 p-4">
-                <CapySticker type={result.item} size={180} />
+              <div className="w-48 h-48 mx-auto mb-6 p-4 flex items-center justify-center bg-white/50 rounded-full border-4 border-dashed border-capy-brown/10">
+                <SpineySticker 
+                  kind={result.item as StickerKind} 
+                  size={140} 
+                />
               </div>
 
-              <h2 className="text-2xl font-black text-capy-brown mb-2">{result.item}</h2>
+              <h2 className="text-2xl font-black text-capy-brown mb-2">
+                {capitalize(result.item)}
+              </h2>
               <p className="text-sm text-capy-muted font-bold mb-8">
                 {result.isNew ? "🎉 New addition to your collection!" : "Already owned! But still cute."}
               </p>
