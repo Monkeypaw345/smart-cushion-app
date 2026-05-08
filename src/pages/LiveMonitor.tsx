@@ -45,46 +45,7 @@ const cellClass = (val: number, occupied: boolean) => {
 };
 
 
-// ---------------------------------------------------------------------------
-// Helper Component: Automatically removes white backgrounds using Canvas
-// ---------------------------------------------------------------------------
-const TransparentImage: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
-  const [processedSrc, setProcessedSrc] = useState<string>(src);
-
-  React.useEffect(() => {
-    let isCancelled = false;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = src;
-    img.onload = () => {
-      if (isCancelled) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      // Threshold: any pixel brighter than this will be transparent
-      const threshold = 240; 
-
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] > threshold && data[i+1] > threshold && data[i+2] > threshold) {
-          data[i + 3] = 0;
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-      setProcessedSrc(canvas.toDataURL());
-    };
-    return () => { isCancelled = true; };
-  }, [src]);
-
-  return <img src={processedSrc} alt={alt} className={className} />;
-};
+import { TransparentImage } from '../components/TransparentImage';
 
 export const LiveMonitor: React.FC = () => {
   const ws = useWebSocket();

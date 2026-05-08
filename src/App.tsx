@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { Dashboard } from './pages/Dashboard';
 import { LiveMonitor } from './pages/LiveMonitor';
@@ -9,31 +9,58 @@ import { Settings } from './pages/Settings';
 import { Shop } from './pages/Shop';
 import { Squad } from './pages/Squad';
 import { Passport } from './pages/Passport';
+import { LoginPage } from './pages/LoginPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 import { WebSocketProvider } from './hooks/useWebSocket';
 import { GamificationProvider } from './lib/gamification';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+import { GachaPage } from './pages/GachaPage';
+import { CollectionPage } from './pages/CollectionPage';
+
+const AppContent = () => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
+      
+      <Route path="/*" element={
+        <ProtectedRoute allowDemo={true}>
+          <MainLayout>
+            <Routes>
+              <Route path="/" element={<Navigate to="/live-monitor" replace />} />
+              <Route path="/live-monitor" element={<LiveMonitor />} />
+              
+              {/* Only full users can see these */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+              <Route path="/ai-advisor" element={<ProtectedRoute><AIAdvisor /></ProtectedRoute>} />
+              <Route path="/history" element={<ProtectedRoute><SessionHistory /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/gacha" element={<ProtectedRoute><GachaPage /></ProtectedRoute>} />
+              <Route path="/collection" element={<ProtectedRoute><CollectionPage /></ProtectedRoute>} />
+              <Route path="/passport" element={<ProtectedRoute><Passport /></ProtectedRoute>} />
+            </Routes>
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+    </Routes>
+  );
+};
 
 function App() {
   return (
-    <WebSocketProvider>
-      <GamificationProvider>
-        <Router>
-          <MainLayout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/live-monitor" element={<LiveMonitor />} />
-              <Route path="/insights" element={<Insights />} />
-              <Route path="/ai-advisor" element={<AIAdvisor />} />
-              <Route path="/history" element={<SessionHistory />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/squad" element={<Squad />} />
-              <Route path="/passport" element={<Passport />} />
-            </Routes>
-          </MainLayout>
-        </Router>
-      </GamificationProvider>
-    </WebSocketProvider>
+    <AuthProvider>
+      <WebSocketProvider>
+        <GamificationProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </GamificationProvider>
+      </WebSocketProvider>
+    </AuthProvider>
   );
 }
 
