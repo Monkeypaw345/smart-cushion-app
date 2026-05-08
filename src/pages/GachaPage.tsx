@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { SpineySticker } from '../components/SpineyStickers';
@@ -18,6 +18,29 @@ export const GachaPage: React.FC = () => {
   const [result, setResult] = useState<{ item: string; rarity: string; isNew: boolean } | null>(null);
 
   const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
+
+  // ---- Sync User Data on Entry ----
+  useEffect(() => {
+    if (!user || isDemo) return;
+
+    const syncUserData = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/user/profile?username=${user.username}`);
+        if (res.ok) {
+          const data = await res.json();
+          refreshUser({ 
+            gems: data.gems,
+            free_spins: data.free_spins,
+            collection: data.collection
+          });
+        }
+      } catch (err) {
+        console.error("Gacha entry sync failed:", err);
+      }
+    };
+
+    syncUserData();
+  }, [user?.username, isDemo, refreshUser]);
 
   const handleRoll = async () => {
     if (rolling) return;

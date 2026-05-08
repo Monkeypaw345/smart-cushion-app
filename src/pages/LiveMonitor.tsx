@@ -64,6 +64,14 @@ export const LiveMonitor: React.FC = () => {
 
   const sessionDuration = msg?.session_duration_sec ?? 0;
   const poorDuration    = msg?.poor_posture_duration_sec ?? 0;
+  const goodDuration    = sessionDuration - poorDuration;
+
+  // ---- Good Posture Gem Calculation (1 Gem every 10 seconds of GOOD posture) ----
+  const currentSessionGems = useMemo(() => {
+    if (!occupied) return 0;
+    return Math.floor(goodDuration / 10);
+  }, [occupied, goodDuration]);
+
   const goodPct         = msg ? Math.round(msg.good_posture_pct) : 0;
   const alertCount      = msg?.alert_count ?? 0;
   const posture: PostureLabel = msg?.posture ?? 'EMPTY';
@@ -74,70 +82,70 @@ export const LiveMonitor: React.FC = () => {
       case 'NUP':
         return {
           tint: 'from-emerald-500/15 to-emerald-500/25',
-          alertTitle: <>Sitting Straight <span className="text-emerald-500">✦</span></>,
+          alertTitle: <>Natural Upright Posture <span className="text-emerald-500">✦</span></>,
           aiMessage: "Perfect posture! Keep it up.",
           mood: 'good' as const,
         };
       case 'LF':
         return {
           tint: 'from-amber-500/15 to-amber-500/25',
-          alertTitle: <>Leaning Forward <span className="text-amber-500">⚠</span></>,
+          alertTitle: <>Lean Forward <span className="text-amber-500">⚠</span></>,
           aiMessage: "Try to sit back and align your spine.",
           mood: 'bad' as const,
         };
       case 'LB':
         return {
           tint: 'from-amber-500/15 to-amber-500/25',
-          alertTitle: <>Leaning Backward <span className="text-amber-500">⚠</span></>,
+          alertTitle: <>Lean Backward <span className="text-amber-500">⚠</span></>,
           aiMessage: "Shift slightly forward for better balance.",
           mood: 'bad' as const,
         };
       case 'LFSR':
         return {
           tint: 'from-orange-500/15 to-orange-500/25',
-          alertTitle: <>Leaning Right <span className="text-orange-500">→</span></>,
+          alertTitle: <>Lean Forward Support Right <span className="text-orange-500">→</span></>,
           aiMessage: "You're leaning right. Center your weight.",
           mood: 'bad' as const,
         };
       case 'LFSL':
         return {
           tint: 'from-orange-500/15 to-orange-500/25',
-          alertTitle: <>Leaning Left <span className="text-orange-500">←</span></>,
+          alertTitle: <>Lean Forward Support Left <span className="text-orange-500">←</span></>,
           aiMessage: "You're leaning left. Center your weight.",
           mood: 'bad' as const,
         };
       case 'CRL':
         return {
           tint: 'from-rose-500/15 to-rose-500/25',
-          alertTitle: <>Crossed Right Leg <span className="text-rose-500">✘</span></>,
+          alertTitle: <>Cross-Right Legged <span className="text-rose-500">✘</span></>,
           aiMessage: "Uncross your legs for better blood flow.",
           mood: 'bad' as const,
         };
       case 'CLL':
         return {
           tint: 'from-rose-500/15 to-rose-500/25',
-          alertTitle: <>Crossed Left Leg <span className="text-rose-500">✘</span></>,
+          alertTitle: <>Cross-Left Legged <span className="text-rose-500">✘</span></>,
           aiMessage: "Uncross your legs for better blood flow.",
           mood: 'bad' as const,
         };
       case 'CRLL':
         return {
           tint: 'from-red-600/15 to-red-600/25',
-          alertTitle: <>Right Leg Lean <span className="text-red-600">⚠</span></>,
+          alertTitle: <>Cross-Right Legged Deep <span className="text-red-600">⚠</span></>,
           aiMessage: "Avoid leaning while your legs are crossed.",
           mood: 'bad' as const,
         };
       case 'CLLL':
         return {
           tint: 'from-red-600/15 to-red-600/25',
-          alertTitle: <>Left Leg Lean <span className="text-red-600">⚠</span></>,
+          alertTitle: <>Cross-Left Legged Deep <span className="text-red-600">⚠</span></>,
           aiMessage: "Avoid leaning while your legs are crossed.",
           mood: 'bad' as const,
         };
       case 'EMPTY':
         return {
           tint: 'from-slate-100 to-slate-200',
-          alertTitle: <>Cushion Empty</>,
+          alertTitle: <>No One Seated</>,
           aiMessage: "Waiting for someone to sit down.",
           mood: 'neutral' as const,
         };
@@ -161,12 +169,12 @@ export const LiveMonitor: React.FC = () => {
   return (
     <div className="mx-auto max-w-6xl text-capy-text px-4 md:px-8 py-6 md:py-8 space-y-6">
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
 
         {/* LEFT: Sensors & Alert Status */}
-        <div className="col-span-12 flex flex-col gap-6 lg:col-span-5">
+        <div className="col-span-12 flex flex-col gap-4 md:gap-6 lg:col-span-5 order-2 lg:order-1">
 
-          <div className="rounded-3xl bg-capy-card p-6 shadow-sm border border-capy-border">
+          <div className="rounded-3xl bg-capy-card p-5 md:p-6 shadow-sm border border-capy-border">
             <div className="mb-6 flex justify-between items-start gap-4">
               <div className="min-w-[240px]">
                 <p className="text-xs font-bold uppercase tracking-wider text-capy-muted mb-1">Active Session</p>
@@ -217,16 +225,31 @@ export const LiveMonitor: React.FC = () => {
                 <p className="text-xs font-bold uppercase tracking-wider text-capy-muted">Good %</p>
               </div>
             </div>
+
+            {/* --- Session Gems Stats --- */}
+            <div className="mt-4 pt-4 md:mt-6 md:pt-6 border-t border-capy-border flex items-center justify-between">
+              <div>
+                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-capy-muted mb-1">Session Gems</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl md:text-2xl">💎</span>
+                  <span className="text-xl md:text-2xl font-black text-capy-brown-3">{currentSessionGems}</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] md:text-[10px] font-bold text-capy-muted leading-tight">
+                  1 Gem every 10s<br/>of Proper Sitting
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* RIGHT: Capybara coach */}
-        <div className="col-span-12 flex flex-col lg:col-span-7">
-          <div className="flex flex-1 flex-col items-center justify-center rounded-3xl bg-capy-card p-8 shadow-sm border border-capy-border overflow-hidden relative min-h-[640px]">
+        <div className="col-span-12 flex flex-col lg:col-span-7 order-1 lg:order-2">
+          <div className="flex flex-1 flex-col items-center justify-center rounded-3xl bg-capy-card p-6 md:p-8 shadow-sm border border-capy-border overflow-hidden relative min-h-[500px] md:min-h-[640px]">
 
-            <div className="absolute top-6 w-full px-8 flex justify-between">
+            <div className="absolute top-6 w-full px-8 flex justify-center lg:justify-between">
               <h3 className="text-lg font-black tracking-tight">Current Posture</h3>
-              <button className="text-sm font-medium text-capy-muted hover:text-capy-text underline">Calibrate</button>
             </div>
 
             {/* Organic wavy cushion background — color reacts to posture */}

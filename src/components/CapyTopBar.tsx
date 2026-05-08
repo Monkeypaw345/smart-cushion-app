@@ -11,8 +11,10 @@ const fmt = (secs: number) => {
 
 export const CapyTopBar: React.FC = () => {
   const { status, lastMessage, connect, disconnect, discover } = useWebSocket();
-  const { isDemo } = useAuth();
+  const { user, refreshUser, isDemo } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const msg = lastMessage;
   const occupied = msg?.occupancy_state === 'occupied';
