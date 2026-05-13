@@ -10,7 +10,7 @@ export const AIAdvisor: React.FC = () => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       text: (
         <>
-          <p className="mb-4">Hello! I am your PostureAI Advisor. I'm connected to your Smart Cushion and analyzing your ergonomics in real-time.</p>
+          <p className="mb-4">Hello! I am your AI Advisor. I'm connected to your Smart Cushion and analyzing your ergonomics in real-time.</p>
           <p>Sit back and work normally. I'll let you know if I detect any prolonged poor posture.</p>
         </>
       )
@@ -116,7 +116,7 @@ export const AIAdvisor: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen p-4 md:p-12">
       <header className="flex justify-between items-center w-full mb-8 md:mb-12">
-        <h1 className="text-xl md:text-2xl font-black tracking-tighter text-on-surface">AI Health Advisor</h1>
+        <h1 className="text-xl md:text-2xl font-black tracking-tighter text-on-surface">AI Advisor</h1>
         <div className="flex items-center gap-4 md:gap-8">
           <nav className="hidden md:flex items-center gap-6">
             <a className="text-on-surface/60 hover:text-primary transition-colors duration-200 font-medium tracking-tight" href="#">Support</a>
@@ -143,7 +143,7 @@ export const AIAdvisor: React.FC = () => {
                 <span className="material-symbols-outlined text-2xl md:text-3xl">psychology</span>
               </div>
               <div>
-                <h3 className="font-bold text-sm md:text-lg text-on-surface">PostureAI Advisor</h3>
+                <h3 className="font-bold text-sm md:text-lg text-on-surface">AI Advisor</h3>
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-tertiary animate-pulse"></span>
                   <span className="text-[8px] md:text-xs font-medium text-on-surface/40 uppercase tracking-widest">Live Analysis</span>

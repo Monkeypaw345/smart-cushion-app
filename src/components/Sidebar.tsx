@@ -5,20 +5,20 @@ import { useGamification } from '../lib/gamification';
 import { useAuth } from '../context/AuthContext';
 
 const mainItems = [
-  { icon: 'home',         label: 'My Posture', path: '/live-monitor', public: true },
+  { icon: 'home',         label: 'My Live',       path: '/live-monitor', public: true },
   { icon: 'trending_up', label: 'Coach',   path: '/dashboard',     public: false },
-  { icon: 'list_alt', label: 'My Journey', path: '/history',       public: false },
-  { icon: 'insights', label: 'Insights',   path: '/insights',      public: false },
+  { icon: 'insights', label: 'My Insights',   path: '/insights',      public: false },
+  { icon: 'list_alt', label: 'My Session', path: '/history',       public: false },
 ];
 
 const capyItems = [
-  { icon: 'casino',          label: 'Capy Gacha',     path: '/gacha',      public: false },
+  { icon: 'casino',          label: 'My Capy Gacha',     path: '/gacha',      public: false },
   { icon: 'auto_awesome',    label: 'My Collection',  path: '/collection', public: false },
   { icon: 'menu_book',       label: 'My Passport',    path: '/passport',   public: false },
 ];
 
 const aiItems = [
-  { icon: 'forum', label: 'AI Pal', path: '/ai-advisor', public: false },
+  { icon: 'forum', label: 'My AI Advisor', path: '/ai-advisor', public: false },
 ];
 
 const SidebarItem: React.FC<{ item: typeof mainItems[0], isDemo: boolean }> = ({ item, isDemo }) => {
@@ -67,7 +67,7 @@ export const Sidebar: React.FC = () => {
         </div>
         <div>
           <h2 className="text-xl font-black tracking-tight text-capy-brown leading-none">Capy Squad</h2>
-          <p className="text-[10px] text-capy-muted font-bold uppercase tracking-widest mt-0.5">Posture Coach</p>
+          <p className="text-[10px] text-capy-muted font-bold uppercase tracking-widest mt-0.5">PostureAI</p>
         </div>
       </div>
 

@@ -109,6 +109,21 @@ export async function fetchSummary(
   );
 }
 
+export async function fetchSummaries(
+  deviceId: string,
+  from: string,
+  to: string,
+): Promise<DailySummary[]> {
+  const dates: string[] = [];
+  let current = new Date(from);
+  const endDate = new Date(to);
+  while (current <= endDate) {
+    dates.push(current.toISOString().slice(0, 10));
+    current.setDate(current.getDate() + 1);
+  }
+  return Promise.all(dates.map((date) => fetchSummary(deviceId, date)));
+}
+
 export async function fetchSessions(
   deviceId: string,
   from: string,
@@ -116,9 +131,9 @@ export async function fetchSessions(
   limit: number = 100,
   offset: number = 0
 ): Promise<SessionsResponse> {
-  if (isMockMode()) return mockSessions(deviceId, from, to); // Mock handles range logic
+  if (isMockMode()) return mockSessions(deviceId, from, to, limit, offset);
   return request<SessionsResponse>(
-    `/sessions?device_id=${encodeURIComponent(deviceId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}&offset=${offset}`,
+    `/sessions?device_id=${encodeURIComponent(deviceId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}&offset=${offset}&sort_by=session_start&order=desc`,
   );
 }
 
@@ -216,6 +231,8 @@ function mockSessions(
   deviceId: string,
   from: string,
   to: string,
+  limit: number,
+  offset: number,
 ): SessionsResponse {
   const sessions: SessionRecord[] = [];
   const start = new Date(from);
@@ -241,16 +258,23 @@ function mockSessions(
       });
     }
   }
+
+  // Sort descending by start time (newest first)
+  sessions.sort((a, b) => new Date(b.start_time_iso).getTime() - new Date(a.start_time_iso).getTime());
+
+  const total_count = sessions.length;
+  const paginatedSessions = sessions.slice(offset, offset + limit);
+
   return { 
     schema_version: '1.0', 
     device_id: deviceId, 
-    total_count: sessions.length,
+    total_count,
     aggregates: {
       total_duration_sec: sessions.reduce((s, x) => s + x.duration_sec, 0),
       total_poor_duration_sec: sessions.reduce((s, x) => s + x.poor_posture_duration_sec, 0),
       total_alerts: sessions.reduce((s, x) => s + x.alert_count, 0),
     },
-    sessions 
+    sessions: paginatedSessions 
   };
 }
 

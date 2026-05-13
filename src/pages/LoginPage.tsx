@@ -43,7 +43,7 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleDemo = () => {
-    login('Demo Guest', 'demo', 100, [], 10);
+    login('Demo Guest', 'user', 100, [], 10);
     navigate('/');
   };
 
@@ -123,7 +123,7 @@ export const LoginPage: React.FC = () => {
               className="group flex items-center gap-2 text-sm font-bold text-capy-brown hover:text-capy-amber transition-colors"
             >
               <span className="bg-capy-amber-soft p-1.5 rounded-lg group-hover:bg-capy-amber/20 transition-colors text-base">🎮</span>
-              Demo User (View Only)
+              Demo User (Full Access)
             </button>
           </div>
         </div>

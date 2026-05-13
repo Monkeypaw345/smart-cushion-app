@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   fetchSessions,
-  fetchSummary,
+  fetchSummaries,
   getApiConfig,
   isMockMode,
   isoDaysAgo,
@@ -63,15 +63,7 @@ function weeklyStats(buckets: DayBucket[]) {
   return { weeklyScore, best, worst };
 }
 
-function pctOfBucket(b: DayBucket | null): number {
-  if (!b) return 0;
-  const t = b.goodMin + b.poorMin;
-  return t > 0 ? Math.round((b.goodMin / t) * 100) : 0;
-}
 
-function weekdayName(date: string): string {
-  return new Date(date).toLocaleDateString(undefined, { weekday: 'long' });
-}
 
 function analyzeTimeOfDay(sessions: SessionsResponse) {
   const buckets = {
@@ -92,7 +84,7 @@ function analyzeTimeOfDay(sessions: SessionsResponse) {
     else { buckets.night.good += g; buckets.night.total += t; }
   }
 
-  const getPct = (b: { good: number; total: number }) => (b.total > 0 ? Math.round((b.good / b.total) * 100) : 0);
+  const getPct = (b: { good: number; total: number }) => (b.total > 0 ? Math.round((b.good / b.total) * 100) : null);
   return [
     { label: 'Morning', sub: '06:00 - 12:00', score: getPct(buckets.morning), icon: 'light_mode', color: 'text-amber-500' },
     { label: 'Afternoon', sub: '12:00 - 18:00', score: getPct(buckets.afternoon), icon: 'wb_sunny', color: 'text-primary' },
@@ -106,67 +98,128 @@ export const Insights: React.FC = () => {
   const today = useMemo(todayIso, []);
   const from = useMemo(() => isoDaysAgo(6), []);
 
-  const summary = useApiData<DailySummary>(
-    () => fetchSummary(cfg.deviceId, today),
-    [cfg.deviceId, today],
+  const summaries = useApiData<DailySummary[]>(
+    () => fetchSummaries(cfg.deviceId, from, today),
+    [cfg.deviceId, from, today],
   );
   const sessions = useApiData<SessionsResponse>(
     () => fetchSessions(cfg.deviceId, from, today),
     [cfg.deviceId, from, today],
   );
 
-  const loading = summary.loading || sessions.loading;
-  const error = summary.error || sessions.error;
+  const loading = summaries.loading || sessions.loading;
+  const error = summaries.error || sessions.error;
   const refresh = () => {
-    summary.refresh();
+    summaries.refresh();
     sessions.refresh();
   };
 
   const buckets = sessions.data ? bucketByDay(sessions.data) : [];
-  const { weeklyScore, best, worst } = weeklyStats(buckets);
+  const { weeklyScore } = weeklyStats(buckets);
   const timeOfDay = sessions.data ? analyzeTimeOfDay(sessions.data) : [];
 
   const totalAlerts = sessions.data
     ? sessions.data.sessions.reduce((sum, s) => sum + s.alert_count, 0)
     : 0;
+  
+  const totalSessions = sessions.data ? sessions.data.total_count : 0;
 
-  const dist = toFriendlyBuckets(summary.data?.posture_distribution_pct);
-  const goodPctToday = dist.upright_pct;
-  const maxBarMin = Math.max(60, ...buckets.map((b) => b.goodMin + b.poorMin));
+  // Aggregate Key Posture over 7 days
+  let up = 0, sf = 0, lr = 0, ll = 0;
+  if (summaries.data) {
+    for (const d of summaries.data) {
+      const fb = toFriendlyBuckets(d.posture_distribution_pct);
+      up += fb.upright_pct;
+      sf += fb.slouching_forward_pct;
+      lr += fb.lean_right_pct;
+      ll += fb.lean_left_pct;
+    }
+  }
+  const postures = [
+    { label: 'Upright', val: up, priority: 1, color: 'text-primary' },
+    { label: 'Slouching Forward', val: sf, priority: 2, color: 'text-error' },
+    { label: 'Lean Right', val: lr, priority: 3, color: 'text-[#f59e0b]' },
+    { label: 'Lean Left', val: ll, priority: 4, color: 'text-[#60a5fa]' },
+  ];
+  const dominantPosture = [...postures].sort((a, b) => {
+    if (b.val !== a.val) return b.val - a.val;
+    return a.priority - b.priority;
+  })[0];
+
+  const getAiAdvisorMessage = (score: number, posture: string) => {
+    if (score <= 50) {
+      if (posture === 'Upright') return "You had some good posture moments this week. Keep going little by little.";
+      if (posture === 'Slouching Forward') return "This week felt a little tough. Try to sit a bit more upright in your next sessions.";
+      if (posture === 'Lean Left') return "This week felt a little tough. Try to sit a little more evenly and avoid leaning left for too long.";
+      if (posture === 'Lean Right') return "This week felt a little tough. Try to sit a little more evenly and avoid leaning right for too long.";
+    } else if (score < 80) {
+      if (posture === 'Upright') return "You're making progress this week. Upright posture showed up most often, so keep building on that.";
+      if (posture === 'Slouching Forward') return "You're making progress this week. Keep going and try to reduce forward slouching in longer sessions.";
+      if (posture === 'Lean Left') return "You're making progress this week. Keep going and try to stay a little more balanced instead of leaning left.";
+      if (posture === 'Lean Right') return "You're making progress this week. Keep going and try to stay a little more balanced instead of leaning right.";
+    } else {
+      if (posture === 'Upright') return "You did really well this week. Upright posture was your strongest pattern. Keep it up.";
+      if (posture === 'Slouching Forward') return "You did really well this week. Keep it up and try to ease back on forward slouching a little more.";
+      if (posture === 'Lean Left') return "You did really well this week. Keep it up and try to sit a little more evenly instead of leaning left.";
+      if (posture === 'Lean Right') return "You did really well this week. Keep it up and try to sit a little more evenly instead of leaning right.";
+    }
+    return "Performance stable. Keep it up!";
+  };
 
   // Mock trend logic (compared to a fixed goal of 80%)
   const trend = weeklyScore >= 80 ? '+3%' : weeklyScore >= 60 ? '+1%' : '-2%';
 
+  const getScoreInfo = (s: number) => {
+    if (s < 50) return { sub: 'Needs Work', color: 'text-error', icon: null };
+    if (s < 80) return { sub: 'Improving', color: 'text-secondary', icon: 'trending_up' };
+    return { sub: 'Keep It Up', color: 'text-tertiary', icon: null };
+  };
+
+  const scoreInfo = getScoreInfo(weeklyScore);
+
   const stats = [
     {
-      label: 'Weekly score',
+      label: 'Weekly Posture Score',
       value: loading ? '—' : `${weeklyScore}%`,
-      sub: weeklyScore >= 75 ? 'GOOD' : weeklyScore >= 50 ? 'FAIR' : 'POOR',
-      color: 'text-primary',
-      trend: trend,
+      delta: trend,
+      color: scoreInfo.color,
     },
     {
-      label: 'Best day',
-      value: best ? weekdayName(best.date) : '—',
-      sub: best ? `${pctOfBucket(best)}%` : '—',
+      label: 'Session Recorded',
+      value: loading ? '—' : String(totalSessions),
+      sub: '',
       color: 'text-on-surface',
     },
     {
-      label: 'Worst day',
-      value: worst ? weekdayName(worst.date) : '—',
-      sub: worst ? `${pctOfBucket(worst)}%` : '—',
-      color: 'text-on-surface',
-      subColor: 'text-error',
-    },
-    {
-      label: 'Total alerts',
+      label: 'Alert Count',
       value: loading ? '—' : String(totalAlerts),
-      sub: totalAlerts > 20 ? 'HIGH' : totalAlerts > 8 ? 'AMBER' : 'LOW',
-      color: 'text-secondary',
-      subBg: 'bg-spine-warn/15',
-      subTextColor: 'text-spine-warn',
+      sub: '',
+      color: totalAlerts === 0 ? 'text-tertiary' : 'text-error',
+    },
+    {
+      label: 'Key Posture',
+      value: loading ? '—' : dominantPosture.label,
+      sub: '',
+      color: dominantPosture.color,
     },
   ];
+
+  const weeklyData = (summaries.data || []).map((summary, i) => {
+    const date = isoDaysAgo(6 - i);
+    const dayIndex = (new Date(date).getDay() + 6) % 7; // 0=Mon
+    const label = DAY_LABELS[dayIndex];
+    const fb = toFriendlyBuckets(summary.posture_distribution_pct);
+    const poorMin = secToMin(summary.poor_posture_duration_sec);
+    return {
+      label,
+      date,
+      poorMin,
+      upright: fb.upright_pct,
+      slouch: fb.slouching_forward_pct,
+      leanRight: fb.lean_right_pct,
+      leanLeft: fb.lean_left_pct,
+    };
+  });
 
   const downloadReport = () => {
     window.print();
@@ -236,106 +289,70 @@ export const Insights: React.FC = () => {
             >
               <div className="flex justify-between items-start mb-1 md:mb-2">
                 <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-on-surface/50">{stat.label}</p>
-                {stat.trend && (
-                  <span className={`text-[8px] md:text-[10px] font-bold ${stat.trend.startsWith('+') ? 'text-tertiary' : 'text-error'}`}>
-                    {stat.trend} <span className="material-symbols-outlined text-[10px] align-middle">{stat.trend.startsWith('+') ? 'trending_up' : 'trending_down'}</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-2xl md:text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
+                {('delta' in stat) && stat.delta && (
+                  <span className={`text-[10px] md:text-xs font-bold ${stat.delta.startsWith('+') ? 'text-tertiary' : 'text-error'}`}>
+                    {stat.delta}
                   </span>
                 )}
-              </div>
-              <div className="flex items-end justify-between">
-                <span className={`text-2xl md:text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
-                <span className={`text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-full mb-0.5 md:mb-1 ${stat.subBg || 'bg-primary/10'} ${stat.subTextColor || stat.subColor || 'text-primary'}`}>
-                  {stat.sub}
-                </span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-8 md:mb-12">
-          <div className="bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-3xl">
-            <div className="mb-6 md:mb-8">
-              <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Posture breakdown</h3>
-              <p className="text-xs md:text-sm text-on-surface/50">Spinal alignment analysis</p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 md:gap-8">
-              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full flex items-center justify-center flex-shrink-0">
-                <div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: `conic-gradient(#00685f 0% ${goodPctToday}%, #bcc9c6 ${goodPctToday}% 100%)`,
-                  }}
-                ></div>
-                <div className="absolute inset-3 md:inset-4 rounded-full bg-surface-container-low flex flex-col items-center justify-center">
-                  <span className="text-3xl md:text-4xl font-black text-primary font-mono leading-none">
-                    {summary.loading ? '—' : `${goodPctToday}%`}
-                  </span>
-                  <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest text-on-surface/40 mt-1">Upright</span>
+        {/* Only render if data exists */}
+        {sessions.data && sessions.data.sessions.length > 0 && (
+          <>
+            <div className="mb-8 md:mb-12">
+              <div className="bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-3xl">
+                <div className="mb-6 md:mb-8">
+                  <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Weekly Posture Pattern</h3>
+                  <p className="text-xs md:text-sm text-on-surface/50">This week - posture distribution and poor posture time</p>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 md:gap-4 w-full sm:w-auto">
-                {[
-                  { label: 'Upright', color: 'bg-primary', pct: dist.upright_pct },
-                  { label: 'Lean L', color: 'bg-[#60a5fa]', pct: dist.lean_left_pct },
-                  { label: 'Lean R', color: 'bg-[#f59e0b]', pct: dist.lean_right_pct },
-                  { label: 'Slouch', color: 'bg-error', pct: dist.slouching_forward_pct },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 md:gap-3">
-                    <div className={`w-2 h-2 md:w-3 md:h-3 rounded-full flex-shrink-0 ${item.color}`}></div>
-                    <div className="truncate">
-                      <p className="text-[10px] md:text-xs font-bold truncate">
-                        {item.label} <span className="font-mono text-on-surface/60 ml-1">{item.pct}%</span>
-                      </p>
-                    </div>
+                <div className="flex gap-2">
+                  <div className="flex flex-col justify-between h-32 md:h-48 py-2 pr-2 text-[8px] md:text-[10px] text-on-surface/40 font-mono text-right border-r border-outline-variant/10">
+                    <span>100%</span>
+                    <span>75%</span>
+                    <span>50%</span>
+                    <span>25%</span>
+                    <span>0%</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-3xl">
-            <div className="mb-6 md:mb-8 flex justify-between items-start">
-              <div>
-                <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Daily posture</h3>
-                <p className="text-xs md:text-sm text-on-surface/50">Last 7 days · min</p>
-              </div>
-              <div className="flex gap-2 md:gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">GOOD</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-error"></div>
-                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">POOR</span>
-                </div>
-              </div>
-            </div>
-            <div className="h-48 md:h-64 flex items-end justify-between px-1 md:px-4 gap-1">
-              {(buckets.length ? buckets : DAY_LABELS.map((l) => ({ label: l, date: '', goodMin: 0, poorMin: 0 }))).map((b, i) => {
-                const goodH = (b.goodMin / maxBarMin) * 100;
-                const poorH = (b.poorMin / maxBarMin) * 100;
-                return (
-                  <div key={i} className="flex-col items-center gap-2 flex flex-1">
-                    <div className="w-full max-w-[1.5rem] md:max-w-[2.5rem] flex flex-col justify-end h-32 md:h-48 rounded-md md:rounded-lg overflow-hidden bg-white/20">
-                      <div className="bg-error w-full" style={{ height: `${poorH}%` }}></div>
-                      <div className="bg-primary w-full" style={{ height: `${goodH}%` }}></div>
-                    </div>
-                    <span className="text-[8px] md:text-[10px] font-bold text-on-surface/40 uppercase">{b.label.charAt(0)}</span>
+                  <div className="h-48 md:h-64 flex items-end justify-between flex-1 gap-1">
+                    {weeklyData.map((d, i) => (
+                      <div key={i} className="flex-col items-center gap-2 flex flex-1">
+                        <div className="w-full max-w-[1.5rem] md:max-w-[2.5rem] flex flex-col justify-end h-32 md:h-48 rounded-md md:rounded-lg overflow-hidden bg-white/20">
+                          <div className="bg-[#60a5fa] w-full transition-all" style={{ height: `${d.leanLeft}%` }}></div>
+                          <div className="bg-[#f59e0b] w-full transition-all" style={{ height: `${d.leanRight}%` }}></div>
+                          <div className="bg-error w-full transition-all" style={{ height: `${d.slouch}%` }}></div>
+                          <div className="bg-[#10b981] w-full transition-all" style={{ height: `${d.upright}%` }}></div>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-[8px] md:text-[10px] font-bold text-on-surface/40 uppercase block mb-0.5">{d.label.charAt(0)}</span>
+                          <span className="text-[8px] md:text-[10px] font-bold text-error block leading-none">{d.poorMin}m</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
+                </div>
+                <div className="flex flex-wrap gap-4 md:gap-8 justify-center mt-6">
+                  <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></div><span className="text-[10px] md:text-xs font-bold text-on-surface/60">Upright</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-error"></div><span className="text-[10px] md:text-xs font-bold text-on-surface/60">Slouching Forward</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></div><span className="text-[10px] md:text-xs font-bold text-on-surface/60">Lean Right</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></div><span className="text-[10px] md:text-xs font-bold text-on-surface/60">Lean Left</span></div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
           <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-outline-variant/10 shadow-sm">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
               <div>
-                <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">Time of Day Performance</h3>
+                <h3 className="text-lg md:text-xl font-bold tracking-tight text-on-surface">My posture score by time of day</h3>
                 <p className="text-xs md:text-sm text-on-surface/50">Fatigue detection trends</p>
               </div>
-              <span className="px-2 py-1 bg-surface-container rounded-lg text-[9px] md:text-[10px] font-black tracking-widest text-on-surface/40">7D AVERAGE</span>
+              <span className="px-2 py-1 bg-surface-container rounded-lg text-[9px] md:text-[10px] font-black tracking-widest text-on-surface/40">7 days average</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
               {timeOfDay.map((t, i) => (
@@ -345,12 +362,11 @@ export const Insights: React.FC = () => {
                     <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface/60 truncate">{t.label}</span>
                   </div>
                   <div className="mb-1.5 md:mb-2">
-                    <span className="text-xl md:text-2xl font-black font-mono text-on-surface">{t.score}%</span>
+                    <span className="text-xl md:text-2xl font-black font-mono text-on-surface">
+                      {t.score !== null ? `${t.score}%` : '--'}
+                    </span>
                   </div>
-                  <div className="w-full h-1 bg-surface-container rounded-full overflow-hidden">
-                    <div className={`h-full ${t.score >= 75 ? 'bg-tertiary' : t.score >= 50 ? 'bg-primary' : 'bg-error'}`} style={{ width: `${t.score}%` }}></div>
-                  </div>
-                  <p className="mt-2 text-[8px] text-on-surface/40 font-medium uppercase truncate">{t.sub}</p>
+                  <p className="text-[8px] md:text-[10px] text-on-surface/40 font-medium uppercase truncate">{t.sub}</p>
                 </div>
               ))}
             </div>
@@ -363,13 +379,11 @@ export const Insights: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-base md:text-lg font-bold text-primary leading-tight">AI Advisor</h4>
-                <p className="text-[10px] md:text-xs text-primary/60">Recommendation</p>
+                <p className="text-[10px] md:text-xs text-primary/60">Personalized suggestion based on your posture data</p>
               </div>
             </div>
             <p className="text-[13px] md:text-sm text-on-surface/70 leading-relaxed mb-6 italic">
-              {worst && pctOfBucket(worst) < 70
-                ? `Decline on ${weekdayName(worst.date)}s. Try a stretch at 14:30.`
-                : 'Performance stable. Keep it up!'}
+              {getAiAdvisorMessage(weeklyScore, dominantPosture.label)}
             </p>
             <div className="space-y-3">
               <button className="w-full py-2.5 md:py-3 bg-primary text-white rounded-xl text-[10px] md:text-xs font-bold tracking-wide hover:opacity-90 transition-opacity">Correction Drill</button>
@@ -377,6 +391,8 @@ export const Insights: React.FC = () => {
             </div>
           </div>
         </div>
+          </>
+        )}
       </section>
     </div>
   );

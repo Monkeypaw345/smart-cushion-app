@@ -1,99 +1,37 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Spiney, moodFromScore } from '../components/Spiney';
-import { useGamification, levelInfo, evolutionName } from '../lib/gamification';
 
 const stats = [
   { label: 'Total Sitting Time', value: '5.2h', sub: 'DAILY', color: 'text-on-surface' },
-  { label: 'Poor Posture Time', value: '28m', sub: 'DAILY', color: 'text-error' },
-  { label: 'Alert Count', value: '12', sub: 'DAILY', color: 'text-secondary' },
-  { label: 'Avg Good Posture', value: '84%', sub: 'DAILY', color: 'text-primary' },
+  { label: 'Poor Posture Time', value: '28m', sub: '', color: 'text-tertiary' },
+  { label: 'Alert Count', value: '12', sub: '', color: 'text-error' },
+  { label: 'Posture Score', value: '84%', sub: 'KEEP IT UP', color: 'text-tertiary', emoji: '🎉🦫' },
 ];
 
-const SpineyPanel: React.FC = () => {
-  const { state } = useGamification();
-  const mood = moodFromScore(state.todayScore);
-  const li = levelInfo(state.xp);
-  return (
-    <div className="bg-white border border-outline-variant/15 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-1">Your Spiney</p>
-          <h3 className="text-xl font-black tracking-tight text-on-surface">{evolutionName(li.level)}</h3>
-          <p className="text-[11px] text-on-surface/50 mt-1">Today's score: <span className="font-mono font-bold">{state.todayScore}%</span></p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40">Level</p>
-          <p className="text-3xl font-black tracking-tighter text-secondary font-mono">{li.level}</p>
-        </div>
-      </div>
-      <div className="flex justify-center my-4">
-        <Spiney mood={mood} size={170} />
-      </div>
-      <div className="mt-4">
-        <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-on-surface/50 mb-1">
-          <span>XP</span>
-          <span className="font-mono">{li.xpInLevel} / 1000</span>
-        </div>
-        <div className="h-2.5 bg-surface-container-low rounded-full overflow-hidden">
-          <div className="h-full bg-secondary rounded-full transition-all" style={{ width: `${li.pct}%` }} />
-        </div>
-        <p className="text-[10px] text-on-surface/40 mt-2 text-center">Next: {evolutionName(li.level + 1)}</p>
-      </div>
-    </div>
-  );
-};
 
-const QuestRow: React.FC<{ id: 'sit_upright' | 'send_sticker' | 'win_duel' }> = ({ id }) => {
-  const { state, claimQuest } = useGamification();
-  const q = state.quests[id];
-  const pct = Math.min(100, Math.round((q.progress / q.goal) * 100));
-  return (
-    <div className="bg-white p-4 rounded-2xl border border-outline-variant/10">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          {q.completed ? (
-            <span className="material-symbols-outlined text-tertiary-fixed-dim">check_circle</span>
-          ) : (
-            <span className="material-symbols-outlined text-on-surface/40">radio_button_unchecked</span>
-          )}
-          <p className="text-sm font-bold text-on-surface">{q.title}</p>
-        </div>
-        <div className="flex items-center gap-1 text-secondary">
-          <span className="material-symbols-outlined text-base">diamond</span>
-          <span className="text-xs font-black font-mono">{q.reward}</span>
-        </div>
-      </div>
-      <div className="h-2 bg-surface-container-low rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${q.completed ? 'bg-tertiary-fixed-dim' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
-      </div>
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 font-mono">
-          {q.progress} / {q.goal}
-        </span>
-        {q.completed && !q.claimed && (
-          <button
-            onClick={() => claimQuest(q.id)}
-            className="text-[10px] uppercase tracking-widest font-bold bg-secondary text-white px-3 py-1 rounded-full hover:opacity-90"
-          >
-            Claim
-          </button>
-        )}
-        {q.claimed && (
-          <span className="text-[10px] uppercase tracking-widest font-bold text-tertiary-fixed-dim">Claimed</span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export const Dashboard: React.FC = () => {
+  const thisWeekScores = [65, 70, 72, 78, 80, 82, 84];
+  const lastWeekScores = [60, 62, 65, 68, 70, 75, 78];
+
+  const thisWeekAvg = thisWeekScores.reduce((a, b) => a + b, 0) / thisWeekScores.length;
+  const lastWeekAvg = lastWeekScores.reduce((a, b) => a + b, 0) / lastWeekScores.length;
+  const scoreChange = thisWeekAvg - lastWeekAvg;
+
+  let dynamicPhrase = "";
+  if (scoreChange > 0) {
+    dynamicPhrase = `Your posture score increased by ${scoreChange.toFixed(1)}% this week. Keep it up!`;
+  } else if (scoreChange === 0) {
+    dynamicPhrase = `Your posture score stayed the same as last week. Stay consistent!`;
+  } else {
+    dynamicPhrase = `Your posture score dropped by ${Math.abs(scoreChange).toFixed(1)}% this week. Let's get back on track!`;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="flex flex-wrap justify-between items-center w-full px-4 md:px-8 py-6 md:py-8 gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-on-surface leading-none">PostureAI</h1>
-          <p className="text-[10px] md:text-sm font-medium tracking-tight text-on-surface/40 mt-1">
+          <p className="text-lg md:text-xl font-medium tracking-tight text-on-surface/60 mt-1">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
@@ -105,9 +43,9 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center gap-3 md:gap-4">
             <span className="material-symbols-outlined text-on-surface/60 cursor-pointer text-xl md:text-2xl">notifications</span>
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-surface-container-low border border-outline-variant/10 overflow-hidden">
-              <img 
-                src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=2070&auto=format&fit=crop" 
-                alt="Profile" 
+              <img
+                src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=2070&auto=format&fit=crop"
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -122,7 +60,12 @@ export const Dashboard: React.FC = () => {
               <p className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-1 md:mb-2">{stat.label}</p>
               <div className="flex items-end justify-between">
                 <span className={`text-2xl md:text-4xl font-black ${stat.color} tracking-tighter font-mono`}>{stat.value}</span>
-                <span className="hidden sm:inline-block text-[8px] md:text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full mb-1">{stat.sub}</span>
+                {stat.sub && (
+                  <div className="flex items-center gap-1.5">
+                    {(stat as any).emoji && <span className="text-xl md:text-2xl">{(stat as any).emoji}</span>}
+                    <span className="hidden sm:inline-block text-[8px] md:text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full mb-1">{stat.sub}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -133,29 +76,33 @@ export const Dashboard: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start mb-8 md:mb-12 gap-4">
               <div>
                 <h3 className="text-xl md:text-2xl font-black tracking-tight text-on-surface">Weekly progression</h3>
-                <p className="text-xs md:text-sm text-on-surface/40">Posture alignment vs previous week</p>
+                <p className="text-xs md:text-sm text-on-surface/40">Posture Score (%) vs previous week</p>
               </div>
               <div className="flex gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">CURRENT</span>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60 uppercase">This Week</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-outline-variant"></div>
-                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60">PREVIOUS</span>
+                  <span className="text-[8px] md:text-[10px] font-bold text-on-surface/60 uppercase">Last Week</span>
                 </div>
               </div>
             </div>
             <div className="h-48 md:h-64 flex items-end justify-between px-1 md:px-4 gap-1">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 md:gap-3 flex-1">
-                  <div className="w-full max-w-[1.5rem] md:max-w-[3rem] flex items-end justify-center gap-0.5 md:gap-1 h-32 md:h-48">
-                    <div className="bg-outline-variant/30 w-1.5 md:w-3 rounded-t-full" style={{ height: `${40 + i * 5}%` }}></div>
-                    <div className="bg-primary w-2 md:w-4 rounded-t-full shadow-lg shadow-primary/20" style={{ height: `${60 + i * 4}%` }}></div>
+                  <div className="w-full max-w-[1.5rem] md:max-w-[3rem] flex items-end justify-center gap-0.5 md:gap-1 h-32 md:h-48 border-b border-outline-variant/20 relative">
+                    <div className="bg-outline-variant/30 w-1.5 md:w-3 rounded-t-sm" style={{ height: `${lastWeekScores[i]}%` }}></div>
+                    <div className="bg-primary w-2 md:w-4 rounded-t-sm shadow-lg shadow-primary/20" style={{ height: `${thisWeekScores[i]}%` }}></div>
                   </div>
                   <span className="text-[8px] md:text-[10px] font-bold text-on-surface/40">{day}</span>
                 </div>
               ))}
+            </div>
+            <div className="mt-6 md:mt-8 bg-surface-container-high rounded-xl md:rounded-2xl p-4 md:p-5 flex items-center gap-3 md:gap-4 shadow-sm border border-outline-variant/10">
+              <span className="material-symbols-outlined text-primary text-xl md:text-2xl">insights</span>
+              <p className="text-xs md:text-sm font-medium text-on-surface/80 leading-relaxed">{dynamicPhrase}</p>
             </div>
           </div>
 
@@ -184,7 +131,7 @@ export const Dashboard: React.FC = () => {
                 <div className="p-2 md:p-3 bg-secondary/10 rounded-xl md:rounded-2xl text-secondary">
                   <span className="material-symbols-outlined text-base md:text-2xl">auto_awesome</span>
                 </div>
-                <h4 className="font-bold text-on-surface text-sm md:text-base">AI Recommendation</h4>
+                <h4 className="font-bold text-on-surface text-sm md:text-base">AI Advisor</h4>
               </div>
               <p className="text-[11px] md:text-sm text-on-surface/60 leading-relaxed italic">
                 "We noticed a slight right-leaning tendency during your last 2 sessions. Try adjusting your monitor 5cm to the left."
@@ -193,27 +140,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mt-6 md:mt-8">
-          <div className="lg:col-span-5">
-            <SpineyPanel />
-          </div>
-          <div className="lg:col-span-7 bg-surface-container-low p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem]">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl md:text-2xl font-black tracking-tight text-on-surface">Daily Quests</h3>
-                <p className="text-xs text-on-surface/40">Resets at midnight</p>
-              </div>
-              <Link to="/passport" className="text-[10px] uppercase font-bold tracking-widest text-primary hover:underline">
-                View stamps →
-              </Link>
-            </div>
-            <div className="space-y-3">
-              <QuestRow id="sit_upright" />
-              <QuestRow id="send_sticker" />
-              <QuestRow id="win_duel" />
-            </div>
-          </div>
-        </div>
+
       </section>
     </div>
   );
