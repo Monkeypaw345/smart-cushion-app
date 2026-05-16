@@ -20,26 +20,13 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.user.username, data.user.role, data.user.gems, data.user.collection, data.user.free_spins);
-        navigate('/');
-      } else {
-        setError(data.message || 'Invalid credentials');
-      }
-    } catch (err) {
-      setError('Connection failed. Please try again.');
-    } finally {
+    // Mock Login: In a real app, this would hit the API.
+    // For this demo, we let anyone in to show off the UI!
+    setTimeout(() => {
+      login(username || 'Smart User', 'user', 100, [], 10);
+      navigate('/');
       setLoading(false);
-    }
+    }, 800);
   };
 
   const handleDemo = () => {
