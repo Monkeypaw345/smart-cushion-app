@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 
 import { GachaPage } from './pages/GachaPage';
 import { CollectionPage } from './pages/CollectionPage';
+import { LegacyDashboard } from './pages/LegacyDashboard';
 
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
@@ -24,6 +25,8 @@ const AppContent = () => {
     <Routes>
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
       
+      <Route path="/legacy-demo" element={<ProtectedRoute allowDemo={true}><LegacyDashboard /></ProtectedRoute>} />
+
       <Route path="/*" element={
         <ProtectedRoute allowDemo={true}>
           <MainLayout>

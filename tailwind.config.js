@@ -99,6 +99,14 @@ export default {
         outline:                       "#e0bcb4",
         "outline-variant":             "#e0bcb4",
 
+        // ----- Legacy Theme Colors -----
+        "legacy-primary": "#00685f",
+        "legacy-bg": "#f8f9ff",
+        "legacy-on-surface": "#0b1c30",
+        "legacy-surface-low": "#eff4ff",
+        "legacy-surface-container": "#e5eeff",
+        "legacy-surface-lowest": "#ffffff",
+
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
