@@ -3,10 +3,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-import { TransparentImage } from '../components/TransparentImage';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,8 +16,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // Mock Login: In a real app, this would hit the API.
-    // For this demo, we let anyone in to show off the UI!
+    // Mock Login for Vercel Demo
     setTimeout(() => {
       login(username || 'Smart User', 'user', 100, [], 10);
       navigate('/');
@@ -45,7 +40,7 @@ export const LoginPage: React.FC = () => {
       <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-legacy-primary/5 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-legacy-surface-low rounded-full blur-[80px]" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full z-10"
@@ -85,7 +80,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             {error && (
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-error text-xs font-bold text-center bg-error/5 py-3 rounded-xl border border-error/10"
